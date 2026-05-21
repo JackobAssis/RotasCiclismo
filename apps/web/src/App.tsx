@@ -1,6 +1,6 @@
 import React from 'react';
-import Debug from './pages/Debug';
+import RidePage from './pages/Ride';
 
 export default function App() {
-  return <Debug />;
+  return <RidePage enableMockGPS={true} />;
 }

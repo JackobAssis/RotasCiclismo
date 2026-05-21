@@ -6,7 +6,7 @@
     "dev": "node --watch -r ts-node/register src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
-    "lint": "eslint "src/**/*.{ts,js}" --fix",
+    "lint": "eslint 'src/**/*.{ts,js}' --fix",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
