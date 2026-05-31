@@ -1,0 +1,406 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USERS & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  username      String     @unique
+  passwordHash  String
+  displayName   String?
+  avatar        String?
+  bio           String?
+  
+  // User preferences & settings
+  privacyLevel  PrivacyLevel @default(PRIVATE)
+  theme         String?
+  language      String?      @default("pt-BR")
+  
+  // Relationships
+  rides         Ride[]
+  syncTasks     SyncTask[]
+  snapshots     Snapshot[]
+  following     Follow[]     @relation("following")
+  followers     Follow[]     @relation("followers")
+  achievements  Achievement[]
+  
+  // Metadata
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  lastLoginAt   DateTime?
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+enum PrivacyLevel {
+  PRIVATE
+  FOLLOWERS_ONLY
+  PUBLIC
+}
+
+// ============================================================================
+// RIDES & ROUTE TRACKING
+// ============================================================================
+
+model Ride {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Core ride data
+  startedAt       DateTime
+  finishedAt      DateTime?
+  status          RideStatus @default(ACTIVE)
+  mode            RideMode
+  
+  // Metrics
+  distance        Float    @default(0)     // km
+  duration        Int      @default(0)     // seconds
+  averageSpeed    Float    @default(0)     // km/h
+  maxSpeed        Float    @default(0)     // km/h
+  elevationGain   Float    @default(0)     // meters
+  elevationLoss   Float    @default(0)     // meters
+  calories        Int      @default(0)
+  
+  // Location data
+  startLatitude   Float?
+  startLongitude  Float?
+  endLatitude     Float?
+  endLongitude    Float?
+  
+  // Ride metadata & future features
+  title           String?
+  description     String?
+  route           RoutePoint[]
+  snapshots       Snapshot[]
+  
+  // Video & media placeholders
+  videoUrl        String?
+  thumbnailUrl    String?
+  gpxUrl          String?
+  videoRecording  VideoRecording?
+  
+  // Tags & categorization
+  tags            String[]  @default([])
+  weather         String?
+  terrainType     String?   // road, mountain, urban, etc
+  
+  // Sync & persistence
+  syncTasks       SyncTask[]
+  syncedAt        DateTime?
+  localOnly       Boolean   @default(true)
+  
+  // Activity tracking
+  isPublic        Boolean   @default(false)
+  likes           Int       @default(0)
+  comments        Comment[]
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([isPublic])
+  @@map("rides")
+}
+
+enum RideStatus {
+  ACTIVE      // Recording in progress
+  PAUSED      // Recording paused
+  FINISHED    // Recording complete
+  SYNCED      // Synced to server
+  ARCHIVED    // Old ride
+}
+
+enum RideMode {
+  GPS_ONLY    // GPS only mode
+  GPS_CAMERA  // GPS + Camera mode
+}
+
+// ============================================================================
+// ROUTE POINTS & SPATIAL DATA
+// ============================================================================
+
+model RoutePoint {
+  id              String   @id @default(cuid())
+  rideId          String
+  ride            Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  
+  // GPS coordinates
+  latitude        Float
+  longitude       Float
+  altitude        Float?   // meters
+  
+  // Motion data
+  speed           Float?   // km/h
+  heading         Float?   // degrees (0-360)
+  accuracy        Float?   // meters
+  altitudeAccuracy Float?
+  
+  // Timestamp
+  timestamp       DateTime
+  
+  // Spatial index (for PostGIS queries)
+  // Raw geometry storage for spatial queries
+  // Using string representation for now
+  
+  createdAt       DateTime @default(now())
+
+  @@index([rideId])
+  @@index([timestamp])
+  @@index([latitude, longitude])  // Simple index for now
+  @@map("route_points")
+}
+
+// ============================================================================
+// SNAPSHOTS & MEDIA
+// ============================================================================
+
+model Snapshot {
+  id              String   @id @default(cuid())
+  rideId          String
+  ride            Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Media URLs
+  imageUrl        String
+  thumbnailUrl    String?
+  
+  // Metadata
+  latitude        Float?
+  longitude       Float?
+  altitude        Float?
+  
+  // File tracking
+  fileSizeBytes   Int?
+  mimeType        String   @default("image/jpeg")
+  
+  // Sync status
+  uploadStatus    UploadStatus @default(PENDING)
+  uploadedAt      DateTime?
+  storageUrl      String?  // CDN/S3 URL after upload
+  
+  // Timestamp
+  timestamp       DateTime
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([rideId])
+  @@index([userId])
+  @@index([uploadStatus])
+  @@map("snapshots")
+}
+
+enum UploadStatus {
+  PENDING       // Waiting to upload
+  UPLOADING     // Currently uploading
+  COMPLETED     // Successfully uploaded
+  FAILED        // Upload failed
+  RETRYING      // Retrying after failure
+}
+
+// ============================================================================
+// SYNC TASKS & OFFLINE-FIRST QUEUE
+// ============================================================================
+
+model SyncTask {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Task identification
+  type            SyncTaskType
+  rideId          String?  // Which ride this sync is for
+  ride            Ride?    @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  
+  // Payload & data
+  payload         Json     // Flexible structure for different task types
+  
+  // Retry logic
+  attempts        Int      @default(0)
+  maxAttempts     Int      @default(5)
+  status          SyncStatus @default(PENDING)
+  
+  // Tracking
+  error           String?  // Last error message
+  lastAttemptAt   DateTime?
+  
+  // Priority & scheduling
+  priority        Int      @default(0)
+  scheduledFor    DateTime @default(now())
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([rideId])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledFor])
+  @@map("sync_tasks")
+}
+
+enum SyncTaskType {
+  RIDE_CREATE       // Create a new ride
+  RIDE_UPDATE       // Update ride metadata
+  RIDE_FINISH       // Mark ride as finished
+  ROUTE_POINTS_UPLOAD  // Batch upload route points
+  SNAPSHOT_UPLOAD   // Upload snapshots
+  VIDEO_UPLOAD      // Upload video (future)
+  PROFILE_UPDATE    // Update user profile
+}
+
+enum SyncStatus {
+  PENDING       // Waiting to be processed
+  IN_PROGRESS   // Currently syncing
+  COMPLETED     // Successfully synced
+  FAILED        // Failed sync (needs retry)
+  DISCARDED     // Permanently discarded
+}
+
+// ============================================================================
+// FUTURE FEATURES SCAFFOLDING
+// ============================================================================
+
+// Video recordings (prepared for future)
+model VideoRecording {
+  id              String   @id @default(cuid())
+  rideId          String   @unique
+  ride            Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  
+  videoUrl        String
+  thumbnailUrl    String?
+  duration        Int      // seconds
+  fileSize        BigInt   // bytes
+  resolution      String   // 1080p, 720p, etc
+  frameRate       Int      @default(30)
+  
+  uploadStatus    UploadStatus @default(PENDING)
+  uploadedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([rideId])
+  @@map("video_recordings")
+}
+
+// Social: Following relationships
+model Follow {
+  id              String   @id @default(cuid())
+  followerId      String
+  follower        User     @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  
+  followingId     String
+  following       User     @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+// Gamification: Achievements & badges
+model Achievement {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type            String   // "first_ride", "100km", "safety_champion", etc
+  title           String
+  description     String?
+  iconUrl         String?
+  
+  progress        Float    @default(100)  // For progressive achievements
+  
+  unlockedAt      DateTime
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("achievements")
+}
+
+// Comments on rides
+model Comment {
+  id              String   @id @default(cuid())
+  rideId          String
+  ride            Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([rideId])
+  @@map("comments")
+}
+
+// ============================================================================
+// ANALYTICS & PERFORMANCE TRACKING (Future)
+// ============================================================================
+
+model RideAnalytics {
+  id              String   @id @default(cuid())
+  rideId          String   @unique
+  
+  // Performance metrics
+  cadence         Float?       // RPM
+  heartRate       Float?       // BPM
+  power           Float?       // Watts
+  
+  // Environmental
+  temperature     Float?       // Celsius
+  humidity        Float?
+  windSpeed       Float?
+  
+  // Computed
+  aerobicLoad     Float?
+  anarobicLoad    Float?
+  tss             Float?       // Training Stress Score
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("ride_analytics")
+}
+
+// ============================================================================
+// SAFETY & SECURITY (Future)
+// ============================================================================
+
+model SafetyEvent {
+  id              String   @id @default(cuid())
+  rideId          String
+  
+  type            String   // "near_miss", "sos_triggered", "crash_detected"
+  latitude        Float
+  longitude       Float
+  
+  description     String?
+  mediaUrl        String?
+  
+  createdAt       DateTime @default(now())
+
+  @@index([rideId])
+  @@map("safety_events")
+}

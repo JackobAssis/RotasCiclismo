@@ -1,5 +1,6 @@
 import { storageService } from './storage.service';
 import { eventBus } from '../lib/eventBus';
+import { authStore } from '../stores/auth.store';
 import type { SyncTask, SyncWorkerCommand, SyncWorkerResponse, SyncWorkerStatus } from '../../../../packages/types/src/index';
 
 const POLL_INTERVAL = 10_000; // 10s
@@ -25,6 +26,17 @@ function setWorkerStatus(status: SyncWorkerStatus) {
   eventBus.emit('sync:worker:status', { status });
 }
 
+function sendTokenToWorker() {
+  if (!worker) return;
+  const token = authStore.getState().accessToken;
+  if (token) {
+    worker.postMessage({
+      type: 'setAccessToken',
+      token,
+    });
+  }
+}
+
 function createWorker(): Worker | null {
   if (worker) return worker;
   if (typeof Worker === 'undefined') {
@@ -40,6 +52,10 @@ function createWorker(): Worker | null {
   instance.onerror = handleWorkerError;
   setWorkerStatus('initializing');
   worker = instance;
+
+  // Send access token ao worker após criação
+  setTimeout(() => sendTokenToWorker(), 100);
+
   return worker;
 }
 

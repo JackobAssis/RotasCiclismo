@@ -3,12 +3,21 @@ import type { RideSession, RoutePoint, Snapshot } from '../../../../packages/typ
 import { eventBus } from '../lib/eventBus';
 
 /**
- * Ride store skeleton — owns RideSession lifecycle and persistence orchestration.
+ * Ride store — owns RideSession lifecycle and realtime updates
+ *
  * Architectural intent:
  * - `rides` module is the single owner of RideSession
- * - other modules (gps, camera) emit events which `rides` consumes
- * - store exposes clear lifecycle methods used by UI and other services
- * - state is minimal and optimized for mobile realtime usage
+ * - GPS and camera modules emit events which `rides` consumes
+ * - Store exposes clear lifecycle methods used by UI and services
+ * - State is optimized for mobile realtime usage and HUD subscriptions
+ * - Distance calculated using Haversine formula for GPS accuracy
+ * - Duration, speed, and elevation updates on point addition
+ *
+ * Realtime Rendering:
+ * - addPoint() triggers store updates which propagate to Map and Widgets
+ * - Map uses memoized selectors to detect polyline changes
+ * - Widgets use granular selectors (speed, distance, duration)
+ * - No unnecessary re-renders via selector isolation
  */
 
 type RideStatus = 'idle' | 'active' | 'paused' | 'finished';
@@ -29,6 +38,30 @@ type RideState = {
   appendPointsSilent: (points: RoutePoint[]) => void;
   appendSnapshotsSilent: (snapshots: Snapshot[]) => void;
 };
+
+/**
+ * Haversine formula to calculate distance between two GPS points
+ * Returns distance in kilometers
+ */
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Calculate duration in milliseconds
+ */
+function calculateDuration(startedAt: string): number {
+  const now = new Date();
+  const start = new Date(startedAt);
+  return Math.floor((now.getTime() - start.getTime()) / 1000); // in seconds
+}
 
 export const useRideStore = create<RideState>((set, get) => ({
   active: null,
@@ -54,7 +87,6 @@ export const useRideStore = create<RideState>((set, get) => ({
     set({ active: initial, status: 'active' });
     // emit typed event for other modules
     eventBus.emit('ride:started', initial);
-    // Note: persistence to IndexedDB and sync enqueuing should be handled by rides services
   },
 
   pauseRide: () => {
@@ -81,23 +113,64 @@ export const useRideStore = create<RideState>((set, get) => ({
       finishedAt: at,
       ...meta
     };
-    // update active session minimally
     set({ active: { ...s, ...summary }, status: 'finished' });
     eventBus.emit('ride:finished', { rideId: s.id, at, summary });
-    // Note: actual persistence, summary calculations and upload handled by services
   },
 
   addPoint: (point) => {
     const s = get().active;
     if (!s) return;
-    // lightweight append to route buffer in memory; persistence is batched by services
+
+    // Initialize route array if needed
     s.route = s.route ?? [];
+
+    // Calculate additional metrics from the new point
+    let newDistance = s.distance ?? 0;
+    let maxSpeed = s.maxSpeed ?? 0;
+    let elevation = s.elevation ?? 0;
+
+    // Calculate distance from previous point if route is not empty
+    if (s.route.length > 0) {
+      const prevPoint = s.route[s.route.length - 1];
+      const distanceToPoint = calculateDistance(
+        prevPoint.latitude,
+        prevPoint.longitude,
+        point.latitude,
+        point.longitude
+      );
+      newDistance += distanceToPoint;
+    }
+
+    // Update max speed
+    const currentSpeed = point.speed ?? 0;
+    maxSpeed = Math.max(maxSpeed, currentSpeed);
+
+    // Calculate elevation change (simplified - just track last elevation)
+    elevation = point.altitude ?? elevation;
+
+    // Calculate duration
+    const duration = calculateDuration(s.startedAt);
+
+    // Calculate average speed (km/h)
+    const durationHours = duration / 3600;
+    const averageSpeed = durationHours > 0 ? newDistance / durationHours : 0;
+
+    // Add point to route
     s.route.push(point as RoutePoint);
-    // update minimal derived fields (placeholders)
-    // e.g., distance/speed calculations are deferred to analytics worker
-    set({ active: s });
-    // Emit authoritative append event so storage layer can persist the point.
-    // This keeps `rides` as the single source of truth while decoupling persistence.
+
+    // Update active session with calculated metrics
+    set({
+      active: {
+        ...s,
+        distance: newDistance,
+        maxSpeed,
+        elevation,
+        duration,
+        averageSpeed
+      }
+    });
+
+    // Emit event for persistence layer
     try {
       eventBus.emit('ride:point:added', { rideId: s.id, point });
     } catch (e) {
@@ -111,22 +184,17 @@ export const useRideStore = create<RideState>((set, get) => ({
     s.snapshots = s.snapshots ?? [];
     s.snapshots.push(snapshot);
     set({ active: s });
-    // Notify storage/persistence about the new snapshot entry
     try {
       eventBus.emit('ride:snapshot:added', { rideId: s.id, snapshot });
     } catch (e) {
       // ignore
     }
-  }
-  ,
+  },
 
-  // Hydration API: set active session without emitting lifecycle events.
   hydrateSession: (session) => {
-    // replace active session entirely with provided session object
     set({ active: { ...session }, status: session.finishedAt ? 'finished' : 'active' });
   },
 
-  // Append points without emitting persistence events. Used during restore.
   appendPointsSilent: (points) => {
     const s = get().active;
     if (!s) return;
@@ -143,11 +211,6 @@ export const useRideStore = create<RideState>((set, get) => ({
     set({ active: s });
   }
 }));
-
-// Subscribe to typed events from the app-wide eventBus. This wiring ensures
-// the `rides` module consumes `point:received` emitted by `gps` and remains
-// authoritative for appending route points.
-// We set up subscriptions once (module init). Consumers may call `eventBus.off` if needed.
 {
   // ensure we don't duplicate subscriptions if this file is re-imported
   const unsubPoint = eventBus.on('point:received', (point) => {

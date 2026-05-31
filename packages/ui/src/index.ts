@@ -1,4 +1,4 @@
-export { default as Button } from './Button';
+// UI components will be added as needed
+// Placeholder for now
 
-// Placeholder component examples
 export default {};
