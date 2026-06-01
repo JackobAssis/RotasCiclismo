@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "description": "SPA routing for Rotas de Ciclismo - serve index.html for all non-asset paths",
+  "include": ["/*"],
+  "exclude": [
+    "/assets/*",
+    "/icons/*",
+    "/manifest.json",
+    "/service-worker.js",
+    "/robots.txt"
+  ]
+}

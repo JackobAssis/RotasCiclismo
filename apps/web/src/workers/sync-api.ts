@@ -1,12 +1,4 @@
-/**
- * Sync API Helper
- * 
- * Função helper para fazer requisições de API dentro do Web Worker.
- * Utilizamos fetch diretamente em vez de apiService (que não está disponível no worker context).
- * 
- * IMPORTANTE: O worker não tem acesso a localStorage ou sessionStorage diretamente.
- * O token será passado via message do main thread.
- */
+const API_BASE_URL = 'http://localhost:3000/api';
 
 interface FetchOptions {
   method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
@@ -15,18 +7,13 @@ interface FetchOptions {
   timeout?: number;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
-/**
- * Executa uma requisição HTTP no worker
- */
 export async function workerFetch<T = any>(
   endpoint: string,
   options: FetchOptions,
   accessToken?: string
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -64,20 +51,22 @@ export async function workerFetch<T = any>(
   }
 }
 
-/**
- * Tipos de requisições para sync
- */
+export async function createRide(
+  rideId: string,
+  data: { id: string; mode: string; startedAt: string },
+  accessToken?: string
+): Promise<any> {
+  return workerFetch('/rides', { method: 'POST', body: data }, accessToken);
+}
+
 export async function uploadRoutePoints(
   rideId: string,
   points: any[],
   accessToken?: string
 ): Promise<any> {
   return workerFetch(
-    `/route-points/bulk`,
-    {
-      method: 'POST',
-      body: { rideId, points },
-    },
+    `/rides/${rideId}/points/bulk`,
+    { method: 'POST', body: { points } },
     accessToken
   );
 }
@@ -89,10 +78,7 @@ export async function finishRide(
 ): Promise<any> {
   return workerFetch(
     `/rides/${rideId}/finish`,
-    {
-      method: 'POST',
-      body: data,
-    },
+    { method: 'POST', body: data },
     accessToken
   );
 }
@@ -103,11 +89,8 @@ export async function uploadSnapshot(
   accessToken?: string
 ): Promise<any> {
   return workerFetch(
-    `/snapshots`,
-    {
-      method: 'POST',
-      body: { rideId, ...data },
-    },
+    `/rides/${rideId}/snapshots`,
+    { method: 'POST', body: data },
     accessToken
   );
 }

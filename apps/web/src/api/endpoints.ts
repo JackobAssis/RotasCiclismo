@@ -69,6 +69,11 @@ export const UPLOADS_ENDPOINTS = {
   GET_STATS: '/uploads/stats',
 } as const;
 
+// Analytics endpoints
+export const ANALYTICS_ENDPOINTS = {
+  GET: '/analytics',
+} as const;
+
 // Health endpoints
 export const HEALTH_ENDPOINTS = {
   HEALTH: '/health',
@@ -85,5 +90,6 @@ export const API_ENDPOINTS = {
   SNAPSHOTS: SNAPSHOTS_ENDPOINTS,
   SYNC: SYNC_ENDPOINTS,
   UPLOADS: UPLOADS_ENDPOINTS,
+  ANALYTICS: ANALYTICS_ENDPOINTS,
   HEALTH: HEALTH_ENDPOINTS,
 } as const;

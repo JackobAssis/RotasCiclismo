@@ -39,11 +39,18 @@ export * from './events';
 
 export type SyncStatus = 'pending' | 'in_progress' | 'failed' | 'completed';
 
+export type SyncTaskType =
+  | 'RIDE_CREATE'
+  | 'RIDE_UPDATE'
+  | 'RIDE_FINISH'
+  | 'ROUTE_POINTS_UPLOAD'
+  | 'SNAPSHOT_UPLOAD';
+
 export type SyncTask = {
   id?: number | string;
-  type: 'ride_upload' | 'snapshot_upload' | 'route_points_upload';
+  type: SyncTaskType;
   rideId: string;
-  payload?: any; // placeholder for data or references
+  payload?: any;
   attempts?: number;
   status?: SyncStatus;
   createdAt?: string;
@@ -55,6 +62,7 @@ export type SyncWorkerStatus = 'initializing' | 'idle' | 'busy' | 'error' | 'ter
 export type SyncWorkerCommand =
   | { type: 'processTasks'; tasks: SyncTask[] }
   | { type: 'cancelTasks'; taskIds: Array<number | string> }
+  | { type: 'setAccessToken'; token: string }
   | { type: 'ping' }
   | { type: 'terminate' };
 

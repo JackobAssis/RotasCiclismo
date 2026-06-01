@@ -356,7 +356,6 @@ export class ApiClient {
 
 // Export singleton instance
 export const apiClient = new ApiClient(
-  typeof process !== 'undefined' && process.env?.VITE_API_URL
-    ? process.env.VITE_API_URL
-    : 'http://localhost:3000/api'
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
+  'http://localhost:3000/api'
 );

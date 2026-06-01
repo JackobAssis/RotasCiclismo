@@ -153,12 +153,11 @@ export class AuthService {
    * Private method used by signup and signin.
    */
   private generateTokens(userId: string, email: string, username: string) {
-    const payload: JwtPayload = {
+    const payload: Omit<JwtPayload, 'exp'> = {
       sub: userId,
       email,
       username,
       iat: Date.now(),
-      exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
     const accessToken = this.jwtService.sign(payload as any, {

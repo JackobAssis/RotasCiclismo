@@ -3,6 +3,11 @@ import { useGPSStore } from '../stores/gps.store';
 import { useRideStore } from '../stores/ride.store';
 import { eventBus } from '../lib/eventBus';
 import { storageService } from '../services/storage.service';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Card } from '../components/ui/Card';
+import { Section } from '../components/ui/Section';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 
 type LogEntry = { id: string; at: string; type: string; preview: string };
 
@@ -18,7 +23,7 @@ export default function Debug() {
   const gps = useGPSStore((s) => ({
     last: s.lastPosition,
     status: s.status,
-    bufferSize: s.buffer.length
+    bufferSize: s.buffer.length,
   }));
 
   const ride = useRideStore((s) => ({ active: s.active, status: s.status }));
@@ -30,6 +35,7 @@ export default function Debug() {
   const pauseRide = useRideStore((s) => s.pauseRide);
   const resumeRide = useRideStore((s) => s.resumeRide);
   const finishRide = useRideStore((s) => s.finishRide);
+  const flushBuffer = useGPSStore((s) => s.flushBuffer);
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const logRef = useRef<HTMLDivElement | null>(null);
@@ -40,16 +46,25 @@ export default function Debug() {
         id: String(Date.now()) + Math.random().toString(16).slice(2),
         at: new Date().toISOString(),
         type,
-        preview: fmt(payload)
+        preview: fmt(payload),
       };
       setLogs((s) => [...s.slice(-200), entry]);
     };
 
-    // Subscribe to important events
     const unsubs = [
-      eventBus.on('point:received', (p) => push('point:received', { lat: p.latitude, lon: p.longitude, ts: p.timestamp })),
-      eventBus.on('snapshot:taken', (s) => push('snapshot:taken', { id: s.id, ts: s.timestamp })),
-      eventBus.on('ride:started', (r) => push('ride:started', { id: r.id, mode: r.mode })),
+      eventBus.on('point:received', (p) =>
+        push('point:received', {
+          lat: p.latitude,
+          lon: p.longitude,
+          ts: p.timestamp,
+        })
+      ),
+      eventBus.on('snapshot:taken', (s) =>
+        push('snapshot:taken', { id: s.id, ts: s.timestamp })
+      ),
+      eventBus.on('ride:started', (r) =>
+        push('ride:started', { id: r.id, mode: r.mode })
+      ),
       eventBus.on('ride:paused', (p) => push('ride:paused', p)),
       eventBus.on('ride:resumed', (p) => push('ride:resumed', p)),
       eventBus.on('ride:finished', (f) => push('ride:finished', f)),
@@ -60,21 +75,21 @@ export default function Debug() {
       eventBus.on('sync:task:progress', (t) => push('sync:task:progress', t)),
       eventBus.on('sync:task:finished', (t) => push('sync:task:finished', t)),
       eventBus.on('sync:task:failed', (t) => push('sync:task:failed', t)),
-      eventBus.on('sync:worker:status', (s) => push('sync:worker:status', s))
+      eventBus.on('sync:worker:status', (s) => push('sync:worker:status', s)),
     ];
 
     return () => unsubs.forEach((u) => u && u());
   }, []);
 
   useEffect(() => {
-    // auto-scroll when new logs arrive
     if (logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
   }, [logs.length]);
 
-  // Sync observability
-  const [online, setOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [online, setOnline] = useState<boolean>(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
   const [workerStatus, setWorkerStatus] = useState<string>('initializing');
   const [syncTasks, setSyncTasks] = useState<any[]>([]);
 
@@ -89,9 +104,7 @@ export default function Debug() {
       try {
         const all = await storageService.getAllSyncTasks();
         if (mounted) setSyncTasks(all || []);
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
     refreshTasks();
 
@@ -100,7 +113,9 @@ export default function Debug() {
       eventBus.on('sync:task:progress', () => refreshTasks()),
       eventBus.on('sync:task:finished', () => refreshTasks()),
       eventBus.on('sync:task:failed', () => refreshTasks()),
-      eventBus.on('sync:worker:status', (status) => setWorkerStatus(status.status))
+      eventBus.on('sync:worker:status', (status) =>
+        setWorkerStatus(status.status)
+      ),
     ];
 
     const poll = setInterval(refreshTasks, 5000);
@@ -115,99 +130,317 @@ export default function Debug() {
   }, []);
 
   return (
-    <div className="p-4 text-sm font-mono text-white bg-gray-900 min-h-screen">
-      <h1 className="text-xl mb-4">Realtime Debug — GPS & Ride Pipeline</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="Debug"
+        subtitle="Painel de monitoramento em tempo real"
+      />
 
-      <section className="grid grid-cols-3 gap-4 mb-4">
-        <div className="p-3 bg-gray-800 rounded">
-          <h2 className="font-semibold mb-2">GPS Status</h2>
-          <div>Status: {gps.status}</div>
-          <div>Buffer size: {gps.bufferSize}</div>
-          <div>Last lat: {gps.last?.latitude ?? '—'}</div>
-          <div>Last lon: {gps.last?.longitude ?? '—'}</div>
-          <div>Accuracy: {gps.last?.accuracy ?? '—'}</div>
-          <div>Altitude: {gps.last?.altitude ?? '—'}</div>
-          <div>Speed: {gps.last?.speed ?? '—'}</div>
-          <div>Heading: {gps.last?.heading ?? '—'}</div>
-          <div>Timestamp: {gps.last?.timestamp ?? '—'}</div>
-          <div className="mt-2 flex gap-2">
-            <button onClick={() => startTracking({ enableHighAccuracy: false })} className="px-3 py-1 bg-green-600 rounded">Start</button>
-            <button onClick={() => stopTracking()} className="px-3 py-1 bg-red-600 rounded">Stop</button>
-          </div>
-        </div>
-
-        <div className="p-3 bg-gray-800 rounded">
-          <h2 className="font-semibold mb-2">Ride Session</h2>
-          <div>Session status: {ride.status}</div>
-          <div>Mode: {ride.active?.mode ?? '—'}</div>
-          <div>StartedAt: {ride.active?.startedAt ?? '—'}</div>
-          <div>Duration: {ride.active?.duration ?? '—'}</div>
-          <div>Total points: {ride.active?.route?.length ?? 0}</div>
-          <div>Snapshots: {ride.active?.snapshots?.length ?? 0}</div>
-          <div className="mt-2 flex gap-2">
-            <button onClick={() => startRide({ id: String(Date.now()), mode: 'GPS_ONLY' })} className="px-3 py-1 bg-green-600 rounded">Start Ride</button>
-            <button onClick={() => pauseRide()} className="px-3 py-1 bg-yellow-600 rounded">Pause</button>
-            <button onClick={() => resumeRide()} className="px-3 py-1 bg-blue-600 rounded">Resume</button>
-            <button onClick={() => finishRide()} className="px-3 py-1 bg-red-600 rounded">Finish</button>
-          </div>
-        </div>
-
-        <div className="p-3 bg-gray-800 rounded">
-          <h2 className="font-semibold mb-2">Buffer & Flush</h2>
-          <div>Current buffer size: {gps.bufferSize}</div>
-          <div>Flush interval (ms): {useGPSStore.getState().flushIntervalMs}</div>
-          <div>Flush batch size: {useGPSStore.getState().flushBatchSize}</div>
-          <div className="mt-2">
-            <button onClick={() => useGPSStore.getState().flushBuffer()} className="px-3 py-1 bg-indigo-600 rounded">Manual Flush</button>
-          </div>
-        </div>
-      </section>
-      <section className="mb-4">
-        <div className="p-3 bg-gray-800 rounded">
-          <h3 className="font-semibold mb-2">Sync Queue</h3>
-          <div className="h-48 overflow-auto p-2 bg-black bg-opacity-10 rounded">
-            {syncTasks.map((t) => (
-              <div key={t.id} className="border-b border-gray-700 py-2">
-                <div className="text-xs text-gray-400">{t.id} — {t.type} — {t.status}</div>
-                <div className="text-xs">Attempts: {t.attempts ?? 0} • createdAt: {t.createdAt} • updatedAt: {t.updatedAt}</div>
-                <div className="text-xs">Payload: {fmt(t.payload)}</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card padding="md">
+          <Section title="GPS Status">
+            <div className="space-y-1.5 text-xs font-mono">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Status</span>
+                <Badge
+                  variant={
+                    gps.status === 'watching'
+                      ? 'success'
+                      : gps.status === 'error'
+                        ? 'danger'
+                        : 'default'
+                  }
+                >
+                  {gps.status}
+                </Badge>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mb-4 grid grid-cols-2 gap-4">
-        <div className="p-3 bg-gray-800 rounded">
-          <h3 className="font-semibold mb-2">Realtime Events</h3>
-          <div ref={logRef} className="h-64 overflow-auto bg-black bg-opacity-20 p-2 rounded">
-            {logs.map((l) => (
-              <div key={l.id} className="mb-1">
-                <div className="text-xs text-gray-400">{l.at} — {l.type}</div>
-                <div className="text-xs">{l.preview}</div>
+              <DebugRow label="Buffer" value={String(gps.bufferSize)} />
+              <DebugRow
+                label="Latitude"
+                value={gps.last?.latitude?.toFixed(6) ?? '--'}
+              />
+              <DebugRow
+                label="Longitude"
+                value={gps.last?.longitude?.toFixed(6) ?? '--'}
+              />
+              <DebugRow
+                label="Precisão"
+                value={gps.last?.accuracy ? `${gps.last.accuracy}m` : '--'}
+              />
+              <DebugRow
+                label="Velocidade"
+                value={
+                  gps.last?.speed ? `${gps.last.speed.toFixed(1)} km/h` : '--'
+                }
+              />
+              <div className="flex gap-2 pt-2">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => startTracking({ enableHighAccuracy: false })}
+                >
+                  Iniciar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => stopTracking()}
+                >
+                  Parar
+                </Button>
               </div>
-            ))}
+            </div>
+          </Section>
+        </Card>
+
+        <Card padding="md">
+          <Section title="Sessão">
+            <div className="space-y-1.5 text-xs font-mono">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Status</span>
+                <Badge
+                  variant={
+                    ride.status === 'active'
+                      ? 'success'
+                      : ride.status === 'paused'
+                        ? 'warning'
+                        : ride.status === 'finished'
+                          ? 'info'
+                          : 'default'
+                  }
+                >
+                  {ride.status}
+                </Badge>
+              </div>
+              <DebugRow label="Modo" value={ride.active?.mode ?? '--'} />
+              <DebugRow
+                label="Duração"
+                value={
+                  ride.active?.duration
+                    ? `${ride.active.duration}s`
+                    : '--'
+                }
+              />
+              <DebugRow
+                label="Pontos"
+                value={String(ride.active?.route?.length ?? 0)}
+              />
+              <DebugRow
+                label="Snapshots"
+                value={String(ride.active?.snapshots?.length ?? 0)}
+              />
+              <div className="flex gap-2 pt-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() =>
+                    startRide({
+                      id: String(Date.now()),
+                      mode: 'GPS_ONLY',
+                    })
+                  }
+                >
+                  Iniciar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => pauseRide()}
+                >
+                  Pausar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => resumeRide()}
+                >
+                  Retomar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => finishRide()}
+                >
+                  Finalizar
+                </Button>
+              </div>
+            </div>
+          </Section>
+        </Card>
+
+        <Card padding="md">
+          <Section title="Buffer">
+            <div className="space-y-1.5 text-xs font-mono">
+              <DebugRow label="Tamanho" value={String(gps.bufferSize)} />
+              <DebugRow
+                label="Flush (ms)"
+                value={String(useGPSStore.getState().flushIntervalMs)}
+              />
+              <DebugRow
+                label="Batch"
+                value={String(useGPSStore.getState().flushBatchSize)}
+              />
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => flushBuffer()}
+                >
+                  Flush manual
+                </Button>
+              </div>
+            </div>
+          </Section>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card padding="md">
+          <Section title="Sync Queue">
+            <div className="max-h-48 overflow-y-auto space-y-1 font-mono text-xs">
+              {syncTasks.length === 0 ? (
+                <p className="text-gray-600 py-4 text-center">
+                  Nenhuma tarefa de sync
+                </p>
+              ) : (
+                syncTasks.map((t) => (
+                  <div
+                    key={t.id}
+                    className="p-2 rounded-lg bg-dark-850 border border-dark-700"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge
+                        variant={
+                          t.status === 'completed'
+                            ? 'success'
+                            : t.status === 'failed'
+                              ? 'danger'
+                              : t.status === 'in_progress'
+                                ? 'warning'
+                                : 'default'
+                        }
+                      >
+                        {t.status}
+                      </Badge>
+                      <span className="text-gray-400">{t.type}</span>
+                    </div>
+                    <div className="text-gray-600">
+                      Tentativas: {t.attempts ?? 0}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Section>
+        </Card>
+
+        <Card padding="md">
+          <Section title="Sistema de Sync">
+            <div className="space-y-1.5 text-xs font-mono">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Conectividade</span>
+                <Badge variant={online ? 'success' : 'danger'}>
+                  {online ? 'online' : 'offline'}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Worker</span>
+                <Badge
+                  variant={
+                    workerStatus === 'idle'
+                      ? 'default'
+                      : workerStatus === 'busy'
+                        ? 'warning'
+                        : 'info'
+                  }
+                >
+                  {workerStatus}
+                </Badge>
+              </div>
+              <DebugRow
+                label="Pendentes"
+                value={String(
+                  syncTasks.filter((t) => t.status === 'pending').length
+                )}
+              />
+              <DebugRow
+                label="Processando"
+                value={String(
+                  syncTasks.filter((t) => t.status === 'in_progress').length
+                )}
+              />
+              <DebugRow
+                label="Falhas"
+                value={String(
+                  syncTasks.filter((t) => t.status === 'failed').length
+                )}
+              />
+              <DebugRow
+                label="Completos"
+                value={String(
+                  syncTasks.filter((t) => t.status === 'completed').length
+                )}
+              />
+              <div className="flex gap-2 pt-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    eventBus.emit('sync:manual:trigger', {} as any)
+                  }
+                >
+                  Forçar Sync
+                </Button>
+              </div>
+            </div>
+          </Section>
+        </Card>
+      </div>
+
+      <Card padding="md">
+        <Section title="Eventos em Tempo Real">
+          <div
+            ref={logRef}
+            className="max-h-64 overflow-y-auto space-y-1 font-mono text-xs bg-dark-950 rounded-lg p-3 border border-dark-700"
+          >
+            {logs.length === 0 ? (
+              <p className="text-gray-600 text-center py-4">
+                Aguardando eventos...
+              </p>
+            ) : (
+              logs.map((l) => (
+                <div key={l.id} className="pb-1.5 border-b border-dark-800 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600 shrink-0">{l.at.slice(11, 23)}</span>
+                    <Badge variant="default">{l.type}</Badge>
+                  </div>
+                  <div className="text-gray-500 truncate mt-0.5">
+                    {l.preview}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
           <div className="mt-2">
-            <button onClick={() => setLogs([])} className="px-3 py-1 bg-gray-600 rounded">Clear Log</button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setLogs([])}
+            >
+              Limpar log
+            </Button>
           </div>
-        </div>
+        </Section>
+      </Card>
+    </div>
+  );
+}
 
-        <div className="p-3 bg-gray-800 rounded">
-          <h3 className="font-semibold mb-2">Sync System</h3>
-          <div>Connectivity: {online ? 'online' : 'offline'}</div>
-          <div>Worker status: {workerStatus}</div>
-          <div>Sync polling: running</div>
-          <div>Pending tasks: {syncTasks.filter((t) => t.status === 'pending').length}</div>
-          <div>Processing tasks: {syncTasks.filter((t) => t.status === 'in_progress').length}</div>
-          <div>Failed tasks: {syncTasks.filter((t) => t.status === 'failed').length}</div>
-          <div>Completed tasks: {syncTasks.filter((t) => t.status === 'completed').length}</div>
-          <div className="mt-2 flex gap-2">
-            <button onClick={() => eventBus.emit('sync:manual:trigger', {})} className="px-3 py-1 bg-indigo-600 rounded">Trigger Sync</button>
-            <button onClick={() => eventBus.emit('sync:manual:clearCompleted', {})} className="px-3 py-1 bg-gray-600 rounded">Clear Completed (placeholder)</button>
-          </div>
-        </div>
-      </section>
+function DebugRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-gray-600">{label}</span>
+      <span className="text-gray-300">{value}</span>
     </div>
   );
 }

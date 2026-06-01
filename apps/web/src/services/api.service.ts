@@ -44,6 +44,8 @@ import type {
   GetUploadUrlDto,
   UploadUrlResponseDto,
   StorageStatsDto,
+  // Analytics
+  AnalyticsResponseDto,
   // Health
   HealthResponseDto,
 } from '../api/types';
@@ -309,6 +311,14 @@ export class ApiService {
 
   async getStorageStats(): Promise<StorageStatsDto> {
     return apiClient.post<StorageStatsDto>(API.UPLOADS_ENDPOINTS.GET_STATS);
+  }
+
+  // ========================================================================
+  // ANALYTICS OPERATIONS
+  // ========================================================================
+
+  async getAnalytics(): Promise<AnalyticsResponseDto> {
+    return apiClient.get<AnalyticsResponseDto>(API.ANALYTICS_ENDPOINTS.GET);
   }
 
   // ========================================================================

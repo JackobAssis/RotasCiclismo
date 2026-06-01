@@ -1,16 +1,25 @@
 import 'reflect-metadata';
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { loadConfig } from './config/config';
+import helmet from 'helmet';
+import compression from 'compression';
 
 async function bootstrap() {
   const config = loadConfig();
-  const logger = new Logger('Bootstrap');
 
-  const app = await NestFactory.create(AppModule, {
-    logger: config.node_env === 'development' ? ['log', 'debug', 'error', 'warn'] : ['log', 'error', 'warn'],
-  });
+  const app = await NestFactory.create(AppModule);
+
+  // Global API prefix
+  app.setGlobalPrefix('api');
+
+  // Security middleware
+  app.use(helmet());
+
+  // Performance: response compression
+  app.use(compression());
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -31,10 +40,6 @@ async function bootstrap() {
 
   // Start server
   await app.listen(config.port);
-
-  logger.log(`🚀 Application running on http://localhost:${config.port}`);
-  logger.log(`Environment: ${config.node_env}`);
-  logger.log(`Database: ${config.database_url.split('://')[0]}`);
 }
 
 bootstrap().catch((err) => {

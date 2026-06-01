@@ -1,6 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../stores/auth.store';
 import { authService } from '../services/auth.service';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatCard } from '../components/ui/StatCard';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Section } from '../components/ui/Section';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -15,90 +20,110 @@ export default function Home() {
     }
   };
 
+  const displayName = user?.displayName || user?.username || 'Ciclista';
+  const stats = user?.stats;
+
+  const weeklyGoal = 100;
+  const totalDistance = stats?.totalDistance ?? 0;
+  const progress = weeklyGoal > 0 ? Math.min((totalDistance / weeklyGoal) * 100, 100) : 0;
+
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-950">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
-        <div>
-          <h1 className="text-lg font-bold text-neutral-900 dark:text-white">
-            RotasCiclismo
-          </h1>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {user?.displayName || user?.username || 'Cyclist'}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={`Olá, ${displayName}`}
+          subtitle="Pronto para sua próxima pedalada"
+        />
+        <Button variant="ghost" size="sm" onClick={handleLogout}>
+          Sair
+        </Button>
+      </div>
+
+      <Section title="Resumo">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard
+            label="Pedaladas"
+            value={stats?.totalRides ?? '--'}
+            variant="neon"
+          />
+          <StatCard
+            label="Distância"
+            value={
+              stats?.totalDistance
+                ? `${stats.totalDistance.toFixed(1)} km`
+                : '-- km'
+            }
+            variant="neon"
+          />
+          <StatCard
+            label="Tempo"
+            value={
+              stats?.totalDuration
+                ? `${Math.floor(stats.totalDuration / 3600)}h ${Math.floor((stats.totalDuration % 3600) / 60)}m`
+                : '--h'
+            }
+            variant="neon"
+          />
+          <StatCard
+            label="Vel. Média"
+            value="-- km/h"
+            variant="neon"
+          />
+        </div>
+      </Section>
+
+      <Section title="Meta Semanal">
+        <Card variant="neon" padding="md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-400">
+              Distância: {totalDistance.toFixed(1)} km / {weeklyGoal} km
+            </span>
+            <span className="text-sm font-bold text-neon-400">
+              {progress.toFixed(0)}%
+            </span>
+          </div>
+          <div className="w-full h-2 bg-dark-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-neon-500 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </Card>
+      </Section>
+
+      <Section>
+        <Card variant="neon" padding="lg" className="text-center">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-16 h-16 rounded-full bg-neon-500/10 border border-neon-500/20 flex items-center justify-center">
+              <span className="text-2xl text-neon-400">▶</span>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">
+                Bora pedalar?
+              </h3>
+              <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                Inicie uma nova sessão com GPS, HUD em tempo real e gravação
+                automática de rota. Funciona offline.
+              </p>
+            </div>
+            <Button
+              size="lg"
+              onClick={() => navigate('/ride')}
+              className="min-w-[200px]"
+            >
+              Iniciar Pedal
+            </Button>
+          </div>
+        </Card>
+      </Section>
+
+      <Section title="Atividade Recente">
+        <Card variant="flat" padding="md" className="text-center py-8">
+          <p className="text-sm text-gray-600">
+            Nenhuma atividade recente. Complete sua primeira pedalada!
           </p>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-        >
-          Logout
-        </button>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
-        {/* Hero */}
-        <div className="text-center max-w-sm">
-          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
-            Ready to Ride?
-          </h2>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Start a new cycling session with GPS tracking, real-time HUD,
-            and automatic route recording. Works offline.
-          </p>
-        </div>
-
-        {/* Start Ride Button */}
-        <button
-          onClick={() => navigate('/ride')}
-          className="w-full max-w-xs px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition-all active:scale-[0.98]"
-        >
-          Start Ride
-        </button>
-
-        {/* Quick Stats (placeholder) */}
-        <div className="grid grid-cols-3 gap-3 w-full max-w-xs">
-          <div className="text-center p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-            <div className="text-lg font-bold text-neutral-900 dark:text-white">
-              --
-            </div>
-            <div className="text-[10px] text-neutral-500 uppercase tracking-wider">
-              Rides
-            </div>
-          </div>
-          <div className="text-center p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-            <div className="text-lg font-bold text-neutral-900 dark:text-white">
-              --
-            </div>
-            <div className="text-[10px] text-neutral-500 uppercase tracking-wider">
-              Distance
-            </div>
-          </div>
-          <div className="text-center p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-            <div className="text-lg font-bold text-neutral-900 dark:text-white">
-              --
-            </div>
-            <div className="text-[10px] text-neutral-500 uppercase tracking-wider">
-              Hours
-            </div>
-          </div>
-        </div>
-
-        {/* Debug Link */}
-        <button
-          onClick={() => navigate('/debug')}
-          className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 underline transition-colors"
-        >
-          Debug Panel
-        </button>
-      </main>
-
-      {/* Footer */}
-      <footer className="px-4 py-3 border-t border-neutral-200 dark:border-neutral-800">
-        <p className="text-[10px] text-center text-neutral-400 dark:text-neutral-600">
-          RotasCiclismo v0.1 — Offline-first cycling computer
-        </p>
-      </footer>
+        </Card>
+      </Section>
     </div>
   );
 }

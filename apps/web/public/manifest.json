@@ -1,9 +1,25 @@
 {
-  "name": "Cycling System",
-  "short_name": "Cycling",
+  "name": "Rotas de Ciclismo",
+  "short_name": "Ciclismo",
+  "description": "Aplicativo de rotas de ciclismo com suporte offline",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#111827",
-  "icons": []
+  "theme_color": "#0d2818",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

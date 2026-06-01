@@ -1,17 +1,3 @@
-/**
- * Login Page
- * 
- * Sign in existing users with email/password
- * 
- * Features:
- * - Email validation
- * - Password input
- * - Loading state
- * - Error messages
- * - Signup link
- * - Offline-safe
- */
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/auth.service';
@@ -27,10 +13,6 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  // ========================================================================
-  // VALIDATION
-  // ========================================================================
-
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -38,16 +20,16 @@ export function LoginPage() {
   const errors: Record<string, string | null> = {
     email: touched.email
       ? !formData.email
-        ? 'Email is required'
+        ? 'Email é obrigatório'
         : !validateEmail(formData.email)
-        ? 'Invalid email'
+        ? 'Email inválido'
         : null
       : null,
     password: touched.password
       ? !formData.password
-        ? 'Password is required'
+        ? 'Senha é obrigatória'
         : formData.password.length < 6
-        ? 'Password must be at least 6 characters'
+        ? 'Senha deve ter pelo menos 6 caracteres'
         : null
       : null,
   };
@@ -59,75 +41,53 @@ export function LoginPage() {
     formData.password.length >= 6 &&
     !isLoading;
 
-  // ========================================================================
-  // HANDLERS
-  // ========================================================================
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setError(null);
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name } = e.target;
-    setTouched((prev) => ({
-      ...prev,
-      [name]: true,
-    }));
+    setTouched((prev) => ({ ...prev, [name]: true }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Mark all fields as touched for validation
-    setTouched({
-      email: true,
-      password: true,
-    });
-
+    setTouched({ email: true, password: true });
     if (!isFormValid) return;
-
     setIsLoading(true);
     setError(null);
-
     try {
       await authService.signin(formData);
       navigate('/', { replace: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
+      const message = err instanceof Error ? err.message : 'Falha no login';
       setError(message);
       setIsLoading(false);
     }
   };
 
-  // ========================================================================
-  // RENDER
-  // ========================================================================
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-dark-950 px-4">
       <div className="w-full max-w-sm">
-        {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
-            Welcome Back
+          <div className="w-14 h-14 rounded-2xl bg-neon-500/10 border border-neon-500/20 flex items-center justify-center text-neon-400 text-2xl font-bold mx-auto mb-4">
+            R
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            Bem-vindo de volta
           </h1>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Sign in to continue tracking your rides
+          <p className="text-sm text-gray-500">
+            Entre para continuar suas pedaladas
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+              className="block text-sm font-medium text-gray-400 mb-1"
             >
               Email
             </label>
@@ -139,28 +99,25 @@ export function LoginPage() {
               onChange={handleChange}
               onBlur={handleBlur}
               disabled={isLoading}
-              className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors ${
+              className={`w-full px-3 py-2.5 bg-dark-800 border rounded-xl text-sm transition-all duration-200 ${
                 errors.email
-                  ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20'
-                  : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900'
-              } text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              placeholder="your@email.com"
+                  ? 'border-red-800 bg-red-900/10'
+                  : 'border-dark-700 hover:border-dark-600 focus:border-neon-700'
+              } text-white placeholder-gray-600 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-neon-500/20`}
+              placeholder="seu@email.com"
               autoFocus
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                {errors.email}
-              </p>
+              <p className="mt-1 text-xs text-red-400">{errors.email}</p>
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+              className="block text-sm font-medium text-gray-400 mb-1"
             >
-              Password
+              Senha
             </label>
             <input
               id="password"
@@ -170,60 +127,56 @@ export function LoginPage() {
               onChange={handleChange}
               onBlur={handleBlur}
               disabled={isLoading}
-              className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors ${
+              className={`w-full px-3 py-2.5 bg-dark-800 border rounded-xl text-sm transition-all duration-200 ${
                 errors.password
-                  ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20'
-                  : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900'
-              } text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  ? 'border-red-800 bg-red-900/10'
+                  : 'border-dark-700 hover:border-dark-600 focus:border-neon-700'
+              } text-white placeholder-gray-600 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-neon-500/20`}
               placeholder="••••••"
             />
             {errors.password && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                {errors.password}
-              </p>
+              <p className="mt-1 text-xs text-red-400">{errors.password}</p>
             )}
           </div>
 
-          {/* Error Alert */}
           {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg">
-              <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
+            <div className="p-3 bg-red-900/20 border border-red-800/40 rounded-xl">
+              <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={!isFormValid}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-400 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-950 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-2.5 bg-neon-500 hover:bg-neon-400 disabled:bg-dark-700 disabled:text-gray-600 text-black font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-neon-500/30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
           >
             {isLoading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Signing in...</span>
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <span>Entrando...</span>
               </>
             ) : (
-              'Sign In'
+              'Entrar'
             )}
           </button>
         </form>
 
-        {/* Signup Link */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Don't have an account?{' '}
+          <p className="text-sm text-gray-500">
+            Não tem conta?{' '}
             <Link
               to="/signup"
-              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              className="text-neon-400 hover:text-neon-300 hover:underline font-medium transition-colors"
             >
-              Sign up
+              Criar conta
             </Link>
           </p>
         </div>
 
-        {/* Footer Note */}
-        <div className="mt-8 text-center text-xs text-neutral-500 dark:text-neutral-500">
-          <p>Your data is encrypted and secure.</p>
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-700">
+            Seus dados são criptografados e seguros.
+          </p>
         </div>
       </div>
     </div>

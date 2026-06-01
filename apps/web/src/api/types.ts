@@ -260,6 +260,37 @@ export interface PaginatedResponseDto<T> {
 }
 
 // ============================================================================
+// ANALYTICS TYPES
+// ============================================================================
+
+export interface WeeklyData {
+  weekStart: string;
+  distance: number;
+  duration: number;
+  rides: number;
+  averageSpeed: number;
+}
+
+export interface MonthlyData {
+  month: string;
+  distance: number;
+  duration: number;
+  rides: number;
+  averageSpeed: number;
+}
+
+export interface AnalyticsResponseDto {
+  totalRides: number;
+  totalDistance: number;
+  totalDuration: number;
+  averageSpeed: number;
+  maxSpeed: number;
+  averageDistance: number;
+  weekly: WeeklyData[];
+  monthly: MonthlyData[];
+}
+
+// ============================================================================
 // HEALTH TYPES
 // ============================================================================
 

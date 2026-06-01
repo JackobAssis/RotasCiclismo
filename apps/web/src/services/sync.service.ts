@@ -1,6 +1,6 @@
 import { storageService } from './storage.service';
 import { eventBus } from '../lib/eventBus';
-import { authStore } from '../stores/auth.store';
+import { useAuthStore } from '../stores/auth.store';
 import type { SyncTask, SyncWorkerCommand, SyncWorkerResponse, SyncWorkerStatus } from '../../../../packages/types/src/index';
 
 const POLL_INTERVAL = 10_000; // 10s
@@ -28,7 +28,7 @@ function setWorkerStatus(status: SyncWorkerStatus) {
 
 function sendTokenToWorker() {
   if (!worker) return;
-  const token = authStore.getState().accessToken;
+  const token = useAuthStore.getState().accessToken;
   if (token) {
     worker.postMessage({
       type: 'setAccessToken',
