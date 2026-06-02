@@ -9,7 +9,6 @@ COPY apps/api/ apps/api/
 COPY packages/ packages/
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @cycling/api exec prisma generate
 RUN pnpm --filter @cycling/api build
 
 FROM node:20-slim
@@ -24,10 +23,11 @@ COPY apps/api/ apps/api/
 COPY packages/ packages/
 
 RUN pnpm install --prod --frozen-lockfile
+RUN npx prisma@5.22.0 generate --schema=apps/api/prisma/schema.prisma
 
 COPY --from=builder /app/apps/api/dist apps/api/dist
 COPY --from=builder /app/apps/api/prisma apps/api/prisma
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node apps/api/dist/main.js"]
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && node dist/main.js"]
