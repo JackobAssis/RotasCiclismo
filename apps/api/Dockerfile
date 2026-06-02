@@ -1,6 +1,6 @@
 FROM node:20-slim AS builder
 
-RUN npm install -g pnpm@latest
+RUN npm install -g pnpm@9
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN pnpm --filter @cycling/api build
 
 FROM node:20-slim
 
-RUN npm install -g pnpm@latest
+RUN npm install -g pnpm@9
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -30,7 +30,4 @@ COPY --from=builder /app/apps/api/prisma apps/api/prisma
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
-
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node apps/api/dist/main.js"]
