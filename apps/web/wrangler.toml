@@ -1,0 +1,9 @@
+name = "rotas-ciclismo"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-06-02"
+
+[env.production]
+vars = { VITE_API_URL = "https://cycling-api.up.railway.app/api" }
+
+[env.preview]
+vars = { VITE_API_URL = "https://cycling-api.up.railway.app/api" }
