@@ -16,7 +16,7 @@ const configSchema = z.object({
   jwt_expires_in: z.string().default('7d'),
   jwt_refresh_secret: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
   jwt_refresh_expires_in: z.string().default('30d'),
-  cors_origin: z.string().default('http://localhost:5173'),
+  cors_origin: z.string().default('https://rotasciclismo.pages.dev,http://localhost:5173'),
   storage_type: z.enum(['local', 's3', 'azure']).default('local'),
   upload_dir: z.string().default('./uploads'),
   redis_url: z.string().optional(),

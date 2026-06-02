@@ -1,35 +1,21 @@
-/**
- * Health Controller
- *
- * Endpoints:
- * GET /health      - Detailed health status
- * GET /ready       - Readiness probe
- * GET /alive       - Liveness probe
- *
- * Note: No rate limiting on health endpoints (critical for monitoring)
- */
-
 import { Controller, Get } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { HealthService } from './health.service';
 
-@Controller()
+@Controller('health')
 @SkipThrottle()
 export class HealthController {
   constructor(private healthService: HealthService) {}
 
-  @Get('health')
+  @Get()
   async getHealth() {
-    return this.healthService.getHealth();
+    const result = await this.healthService.getHealth();
+    return { status: result.database === 'connected' ? 'ok' : 'error' };
   }
 
   @Get('ready')
   async getReadiness() {
-    return this.healthService.getReadiness();
-  }
-
-  @Get('alive')
-  async getLiveness() {
-    return { alive: true };
+    const result = await this.healthService.getReadiness();
+    return { status: result.ready ? 'ready' : 'not ready' };
   }
 }
