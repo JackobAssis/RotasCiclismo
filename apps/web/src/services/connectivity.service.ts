@@ -236,11 +236,11 @@ export class ConnectivityService {
 }
 
 function getHealthUrl(): string {
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
-    return `${import.meta.env.VITE_API_URL}/health`;
-  }
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
     return 'https://cycling-api-production.up.railway.app/api/health';
+  }
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return `${import.meta.env.VITE_API_URL}/health`;
   }
   return 'http://localhost:3000/api/health';
 }
