@@ -1,7 +1,18 @@
 import type { SyncTask, SyncWorkerCommand, SyncWorkerResponse, SyncWorkerStatus } from '../../../../packages/types/src/index';
 
 const WORKER_LOG = '[SyncWorker]';
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '';
+
+function getWorkerApiUrl(): string {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof self !== 'undefined' && self.location && self.location.hostname !== 'localhost' && self.location.hostname !== '127.0.0.1') {
+    return 'https://cycling-api-production.up.railway.app/api';
+  }
+  return 'http://localhost:3000/api';
+}
+
+const API_BASE_URL = getWorkerApiUrl();
 let cancelledTaskIds = new Set<number | string>();
 let activeStatus: SyncWorkerStatus = 'idle';
 let currentAccessToken: string | null = null;

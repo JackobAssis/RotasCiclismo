@@ -354,8 +354,15 @@ export class ApiClient {
   }
 }
 
+function getApiBaseUrl(): string {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://cycling-api-production.up.railway.app/api';
+  }
+  return 'http://localhost:3000/api';
+}
+
 // Export singleton instance
-export const apiClient = new ApiClient(
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
-  'http://localhost:3000/api'
-);
+export const apiClient = new ApiClient(getApiBaseUrl());
