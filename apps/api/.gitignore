@@ -18,5 +18,5 @@ yarn-error.log*
 *.swo
 *~
 coverage/
-uploads/
+/uploads/
 .env.test
