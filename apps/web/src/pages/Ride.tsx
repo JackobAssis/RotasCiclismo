@@ -8,6 +8,7 @@ import CameraSurface from '../components/CameraSurface';
 import MinimapOverlay from '../components/MinimapOverlay';
 import useCameraStore from '../stores/camera.store';
 import useMinimapStore from '../stores/minimap.store';
+import { useWatchPosition } from '../hooks/useWatchPosition';
 import {
   SpeedWidget,
   DistanceWidget,
@@ -211,6 +212,8 @@ export const RidePage: React.FC<RidePageProps> = ({
     }, mockGPSInterval);
     return cleanup;
   }, [enableMockGPS, active, addPoint, mockGPSInterval]);
+
+  useWatchPosition(!enableMockGPS);
 
   const handlePauseResume = useCallback(() => {
     if (status === 'active') pauseRide();

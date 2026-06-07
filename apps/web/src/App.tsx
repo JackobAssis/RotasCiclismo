@@ -59,7 +59,7 @@ export default function App() {
             path="/ride"
             element={
               <ProtectedRoute>
-                <RidePage enableMockGPS={true} />
+                <RidePage enableMockGPS={import.meta.env.DEV} />
               </ProtectedRoute>
             }
           />
