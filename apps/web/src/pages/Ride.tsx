@@ -1,20 +1,22 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { useRideStore } from '../stores/ride.store';
 import { useRuntimeStore, useRenderingProfile, useHudDensity, useShouldShowMap, useModeCapabilities } from '../stores/runtime.store';
 import { RuntimeMode } from '../modules/runtime/types';
-import Map from '../components/Map';
 import OverlayManager from '../components/OverlayManager';
-import CameraSurface from '../components/CameraSurface';
 import MinimapOverlay from '../components/MinimapOverlay';
 import useCameraStore from '../stores/camera.store';
 import useMinimapStore from '../stores/minimap.store';
 import { useWatchPosition } from '../hooks/useWatchPosition';
+
+const Map = lazy(() => import('../components/Map'));
+const CameraSurface = lazy(() => import('../components/CameraSurface'));
 import {
   SpeedWidget,
   DistanceWidget,
   DurationWidget,
   GPSStatusWidget,
-  RecordingStatusWidget
+  RecordingStatusWidget,
+  BatteryWidget
 } from '../components/HudWidgets';
 import { Badge } from '../components/ui/Badge';
 
@@ -84,7 +86,8 @@ const RuntimeModeControls: React.FC<{ showDebugPanel: boolean }> = ({ showDebugP
             key={mode.id}
             onClick={() => handleModeSelect(mode.id)}
             title={mode.description}
-            className={`flex-1 min-w-20 px-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+            style={{ touchAction: 'manipulation', userSelect: 'none' }}
+            className={`flex-1 min-w-20 px-3 py-3 rounded-xl text-xs font-semibold transition-all min-h-[48px] ${
               currentMode === mode.id
                 ? 'bg-neon-500/20 text-neon-400 border border-neon-500/40 shadow-neon-sm'
                 : 'bg-dark-850 text-gray-500 border border-dark-700 hover:border-dark-600'
@@ -183,23 +186,38 @@ export const RidePage: React.FC<RidePageProps> = ({
   enableCameraFollow = true,
   enableMockGPS = true,
   mockGPSInterval = 1000,
-  showDebugPanel = true,
+  showDebugPanel = import.meta.env.DEV,
 }) => {
-  const { active, status, startRide, addPoint, pauseRide, resumeRide, finishRide } = useRideStore();
-  const [isMounted, setIsMounted] = useState(false);
+  // Individual selectors — prevents full re-render on every GPS point
+  const status = useRideStore((s) => s.status);
+  const startRide = useRideStore((s) => s.startRide);
+  const addPoint = useRideStore((s) => s.addPoint);
+  const pauseRide = useRideStore((s) => s.pauseRide);
+  const resumeRide = useRideStore((s) => s.resumeRide);
+  const finishRide = useRideStore((s) => s.finishRide);
 
+  const [isMounted, setIsMounted] = useState(false);
+  const mountedRef = useRef(false);
+
+  // Mount effect — uses getState() to avoid dependency on active object
   useEffect(() => {
     setIsMounted(true);
-    if (!active) {
-      const rideId = `ride-${Date.now()}`;
-      startRide({ id: rideId, userId: null, mode: 'GPS_ONLY' });
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      const active = useRideStore.getState().active;
+      if (!active) {
+        const rideId = `ride-${Date.now()}`;
+        startRide({ id: rideId, userId: null, mode: 'GPS_ONLY' });
+      }
     }
     return () => setIsMounted(false);
-  }, [active, startRide]);
+  }, [startRide]);
 
+  // Mock GPS — uses getState() inside callback to avoid depending on active
   useEffect(() => {
-    if (!enableMockGPS || !active) return;
+    if (!enableMockGPS) return;
     const cleanup = createMockGPSUpdates((position) => {
+      if (!useRideStore.getState().active) return;
       addPoint({
         latitude: position.latitude,
         longitude: position.longitude,
@@ -211,20 +229,35 @@ export const RidePage: React.FC<RidePageProps> = ({
       });
     }, mockGPSInterval);
     return cleanup;
-  }, [enableMockGPS, active, addPoint, mockGPSInterval]);
+  }, [enableMockGPS, addPoint, mockGPSInterval]);
 
-  useWatchPosition(!enableMockGPS);
+  // GPS throttling derived from rendering mode
+  const profile = useRenderingProfile();
+  const gpsOptions = useMemo<PositionOptions>(() => {
+    if (profile.mode === 'LOW_BATTERY') {
+      return { enableHighAccuracy: false, maximumAge: 3000, timeout: 15000 };
+    }
+    if (profile.performance.gpsFrequency >= 2) {
+      return { enableHighAccuracy: true, maximumAge: 500, timeout: 8000 };
+    }
+    return { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 };
+  }, [profile.mode, profile.performance.gpsFrequency]);
 
+  useWatchPosition(!enableMockGPS, gpsOptions);
+
+  // Callbacks use getState() to avoid dependencies on mutable objects
   const handlePauseResume = useCallback(() => {
-    if (status === 'active') pauseRide();
-    else if (status === 'paused') resumeRide();
-  }, [status, pauseRide, resumeRide]);
+    const s = useRideStore.getState().status;
+    if (s === 'active') pauseRide();
+    else if (s === 'paused') resumeRide();
+  }, [pauseRide, resumeRide]);
 
   const handleFinish = useCallback(() => {
-    finishRide({ distance: active?.distance ?? 0, duration: active?.duration ?? 0 });
-  }, [active, finishRide]);
+    if (!window.confirm('Finalizar pedalada?')) return;
+    const state = useRideStore.getState();
+    finishRide({ distance: state.active?.distance ?? 0, duration: state.active?.duration ?? 0 });
+  }, [finishRide]);
 
-  const profile = useRenderingProfile();
   const hudDensity = useHudDensity();
   const shouldShowMap = useShouldShowMap();
   const modeCapabilities = useModeCapabilities();
@@ -234,12 +267,13 @@ export const RidePage: React.FC<RidePageProps> = ({
   const requestPermissionAndStart = useCameraStore((s) => s.requestPermissionAndStart);
   const stopCameraStream = useCameraStore((s) => s.stopStream);
   const minimapExpandedRide = useMinimapStore((s) => s.expanded);
+  const routeLength = useRideStore((s) => s.active?.route?.length ?? 0);
+  const rideDistance = useRideStore((s) => s.active?.distance ?? 0);
 
-  const shouldRenderGPSWidget = useMemo(() => hudDensity !== 'minimal', [hudDensity]);
-  const shouldRenderSpeedWidget = useMemo(() => true, []);
-  const shouldRenderDistanceWidget = useMemo(() => hudDensity !== 'minimal', [hudDensity]);
-  const shouldRenderDurationWidget = useMemo(() => hudDensity === 'full', [hudDensity]);
-  const shouldRenderRecordingWidget = useMemo(() => true, []);
+  // Simple booleans — no useMemo needed (primitives, cheap)
+  const shouldRenderGPSWidget = hudDensity !== 'minimal';
+  const shouldRenderDurationWidget = hudDensity !== 'minimal';
+  const shouldRenderBatteryWidget = hudDensity !== 'minimal';
 
   const mapContainerClasses = useMemo(
     () =>
@@ -248,8 +282,6 @@ export const RidePage: React.FC<RidePageProps> = ({
         : 'w-0 h-0 overflow-hidden absolute',
     [shouldShowMap]
   );
-
-  const hudContainerClasses = useMemo(() => `absolute inset-0 pointer-events-none`, []);
 
   const hudOpacityStyle = useMemo(
     () => ({ opacity: profile.hud.opacity }),
@@ -275,12 +307,17 @@ export const RidePage: React.FC<RidePageProps> = ({
     [currentMode, shouldShowMap, hudDensity, profile, modeCapabilities]
   );
 
+  // Camera lifecycle
   useEffect(() => {
     let mounted = true;
     const ensureCameraForMode = async () => {
+      if (!mounted) return;
       if (currentMode === RuntimeMode.CAMERA_RECORD) {
-        await requestPermissionAndStart();
-      } else {
+        const cameraFps = profile.performance.cameraFps ?? 30;
+        const resolution = profile.mode === 'LOW_BATTERY' ? '720p' : '720p';
+        const fps = profile.mode === 'LOW_BATTERY' ? 15 : cameraFps;
+        await requestPermissionAndStart({ fps, resolution });
+      } else if (mounted) {
         stopCameraStream();
       }
     };
@@ -289,86 +326,143 @@ export const RidePage: React.FC<RidePageProps> = ({
       mounted = false;
       stopCameraStream();
     };
-  }, [currentMode, requestPermissionAndStart, stopCameraStream]);
+  }, [currentMode, requestPermissionAndStart, stopCameraStream, profile.performance.cameraFps, profile.mode]);
+
+  // Battery API — proper listener cleanup
+  useEffect(() => {
+    let batteryManager: any = null;
+    let mounted = true;
+
+    const updateBattery = (battery: any) => {
+      if (!mounted) return;
+      const level = Math.round(battery.level * 100);
+      useRuntimeStore.getState().updateBatteryStatus(level, battery.charging);
+    };
+
+    const onLevelChange = () => { if (batteryManager) updateBattery(batteryManager); };
+    const onChargingChange = () => { if (batteryManager) updateBattery(batteryManager); };
+
+    const setupBattery = async () => {
+      try {
+        if ('getBattery' in navigator) {
+          batteryManager = await (navigator as any).getBattery();
+          updateBattery(batteryManager);
+          batteryManager.addEventListener('levelchange', onLevelChange);
+          batteryManager.addEventListener('chargingchange', onChargingChange);
+        }
+      } catch (e) {
+        // Battery Status API not available
+      }
+    };
+
+    setupBattery();
+
+    return () => {
+      mounted = false;
+      if (batteryManager) {
+        try {
+          batteryManager.removeEventListener('levelchange', onLevelChange);
+          batteryManager.removeEventListener('chargingchange', onChargingChange);
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   if (!isMounted) return null;
 
   const statusVariant = status === 'active' ? 'success' : status === 'paused' ? 'warning' : status === 'finished' ? 'info' : 'default';
 
   return (
-    <div className="w-full h-screen flex flex-col bg-dark-950">
+    <div className="w-full h-screen flex flex-col bg-dark-950"
+      style={{
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingLeft: 'env(safe-area-inset-left, 0px)',
+        paddingRight: 'env(safe-area-inset-right, 0px)',
+      }}>
       <div className={mapContainerClasses}>
         {profile.camera.visible && (
           <div className="absolute inset-0 z-0">
-            <CameraSurface />
+            <Suspense fallback={null}><CameraSurface /></Suspense>
           </div>
         )}
         {profile.minimap.visible && <MinimapOverlay />}
-        {profile.map.visible && <Map enableCameraFollow={enableCameraFollow} />}
+        {profile.map.visible && <Suspense fallback={null}><Map enableCameraFollow={enableCameraFollow} /></Suspense>}
 
         <OverlayManager>
-          <div className={hudContainerClasses} style={hudOpacityStyle}>
+          <div className="absolute inset-0 pointer-events-none" style={hudOpacityStyle}>
             <div style={hudScaleStyle}>
               {shouldRenderGPSWidget && <GPSStatusWidget />}
-              {shouldRenderRecordingWidget && <RecordingStatusWidget />}
-              {shouldRenderSpeedWidget && <SpeedWidget />}
-              {shouldRenderDistanceWidget && <DistanceWidget />}
+              <RecordingStatusWidget />
+              {shouldRenderBatteryWidget && <BatteryWidget />}
+              <SpeedWidget />
+              <DistanceWidget />
               {shouldRenderDurationWidget && <DurationWidget />}
             </div>
+          </div>
 
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 pointer-events-auto z-300">
-              <button
-                onClick={handlePauseResume}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  status === 'active'
-                    ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
-                    : status === 'paused'
-                      ? 'bg-neon-600 hover:bg-neon-500 text-black'
-                      : 'bg-dark-700 text-gray-500'
-                }`}
-                disabled={status === 'idle' || status === 'finished'}
-              >
-                {status === 'active' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Pausar'}
-              </button>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto z-[500]" style={{ touchAction: 'manipulation' }}>
+            <button
+              onClick={handlePauseResume}
+              className={`px-8 py-4 rounded-xl font-bold text-lg transition-all min-h-[52px] ${
+                status === 'active'
+                  ? 'bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg'
+                  : status === 'paused'
+                    ? 'bg-neon-600 hover:bg-neon-500 text-black shadow-lg'
+                    : 'bg-dark-700 text-gray-500'
+              }`}
+              disabled={status === 'idle' || status === 'finished'}
+              style={{ touchAction: 'manipulation', userSelect: 'none' }}
+            >
+              {status === 'active' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Pausar'}
+            </button>
+          </div>
 
-              <button
-                onClick={handleFinish}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  status === 'finished'
-                    ? 'bg-neon-600 hover:bg-neon-500 text-black'
-                    : status === 'idle'
-                      ? 'bg-dark-700 text-gray-500'
-                      : 'bg-red-600 hover:bg-red-500 text-white'
-                }`}
-                disabled={status === 'idle'}
-              >
-                {status === 'finished' ? 'Finalizado' : 'Finalizar'}
-              </button>
-            </div>
+          <div className="absolute bottom-8 right-6 pointer-events-auto z-[500]" style={{ touchAction: 'manipulation' }}>
+            <button
+              onClick={handleFinish}
+              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all min-h-[48px] min-w-[48px] ${
+                status === 'finished'
+                  ? 'bg-neon-600/20 text-neon-400 border border-neon-500/30'
+                  : status === 'idle'
+                    ? 'bg-dark-800 text-gray-600 border border-dark-700'
+                    : 'bg-dark-800 text-gray-400 border border-dark-700 hover:border-red-800 hover:text-red-400'
+              }`}
+              disabled={status === 'idle'}
+              style={{ touchAction: 'manipulation', userSelect: 'none' }}
+            >
+              {status === 'finished' ? '✓' : '⏹'}
+            </button>
           </div>
         </OverlayManager>
       </div>
 
-      <div className="border-t border-dark-700 bg-dark-900/90 p-3 max-h-80 overflow-y-auto">
-        <RuntimeModeControls showDebugPanel={showDebugPanel} />
-      </div>
-
-      <div className="bg-dark-950/80 text-white text-xs p-2 border-t border-dark-700 font-mono">
-        <div className="flex justify-between gap-2 flex-wrap">
-          <span className="flex items-center gap-1">
-            Status: <Badge variant={statusVariant}>{status}</Badge>
-          </span>
-          <span>Pontos: {active?.route?.length ?? 0}</span>
-          <span>Distância: {(active?.distance ?? 0).toFixed(1)} km</span>
-          <span>Modo: {currentMode}</span>
-          <span>HUD: {hudDensity}</span>
-          <span>Amostragem: {runtimeCompositionInfo.routeSampling}</span>
-          <span>Dreno: {runtimeCompositionInfo.batteryDrain}</span>
-          <span>Câmera: {String(cameraStatus)}</span>
-          <span>MiniMapa: {profile.minimap.visible ? (minimapExpandedRide ? 'Visível (Expandido)' : 'Visível') : 'Oculto'}</span>
-          <span>CameraFollow: {enableCameraFollow ? 'ON' : 'OFF'}</span>
+      {import.meta.env.DEV && (
+        <div className="border-t border-dark-700 bg-dark-900/90 p-3 max-h-80 overflow-y-auto">
+          <RuntimeModeControls showDebugPanel={showDebugPanel} />
         </div>
-      </div>
+      )}
+
+      {import.meta.env.DEV && (
+        <div className="bg-dark-950/80 text-white text-xs p-2 border-t border-dark-700 font-mono">
+          <div className="flex justify-between gap-2 flex-wrap">
+            <span className="flex items-center gap-1">
+              Status: <Badge variant={statusVariant}>{status}</Badge>
+            </span>
+            <span>Pontos: {routeLength}</span>
+            <span>Distância: {rideDistance.toFixed(1)} km</span>
+            <span>Modo: {currentMode}</span>
+            <span>HUD: {hudDensity}</span>
+            <span>Amostragem: {runtimeCompositionInfo.routeSampling}</span>
+            <span>Dreno: {runtimeCompositionInfo.batteryDrain}</span>
+            <span>Câmera: {String(cameraStatus)}</span>
+            <span>MiniMapa: {profile.minimap.visible ? (minimapExpandedRide ? 'Visível (Expandido)' : 'Visível') : 'Oculto'}</span>
+            <span>CameraFollow: {enableCameraFollow ? 'ON' : 'OFF'}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

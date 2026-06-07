@@ -34,6 +34,8 @@ export class ConnectivityService {
   private healthCheckInterval: number | null = null;
   private lastHealthCheckTime: number = 0;
   private latency: number | undefined;
+  private boundOnline: (() => void) | null = null;
+  private boundOffline: (() => void) | null = null;
 
   constructor(
     private healthCheckUrl: string = '/api/health',
@@ -48,9 +50,10 @@ export class ConnectivityService {
   private initialize(): void {
     if (typeof window === 'undefined') return;
 
-    // Listen to browser events
-    window.addEventListener('online', () => this.onOnline());
-    window.addEventListener('offline', () => this.onOffline());
+    this.boundOnline = () => this.onOnline();
+    this.boundOffline = () => this.onOffline();
+    window.addEventListener('online', this.boundOnline);
+    window.addEventListener('offline', this.boundOffline);
 
     // Initial status
     if (!navigator.onLine) {
@@ -226,11 +229,9 @@ export class ConnectivityService {
    */
   destroy(): void {
     this.stopHealthChecks();
-    this.listeners.clear();
-
     if (typeof window !== 'undefined') {
-      window.removeEventListener('online', () => this.onOnline());
-      window.removeEventListener('offline', () => this.onOffline());
+      if (this.boundOnline) window.removeEventListener('online', this.boundOnline);
+      if (this.boundOffline) window.removeEventListener('offline', this.boundOffline);
     }
   }
 }

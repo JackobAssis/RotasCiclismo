@@ -343,49 +343,56 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
 
 /**
  * Convenience hook for getting rendering profile
+ * Uses property selector (not function call inside selector)
  */
 export function useRenderingProfile() {
-  return useRuntimeStore((state) => state.getRenderingProfile());
+  const currentMode = useRuntimeStore((state) => state.currentMode);
+  const cached = useRuntimeStore((state) => state._cachedProfile);
+  if (cached?.mode === currentMode) return cached;
+  return getRenderingProfile(currentMode);
 }
 
 /**
  * Convenience hook for getting mode capabilities
  */
 export function useModeCapabilities() {
-  return useRuntimeStore((state) => state.getModeCapabilities());
+  const currentMode = useRuntimeStore((state) => state.currentMode);
+  const cached = useRuntimeStore((state) => state._cachedCapabilities);
+  if (cached?.mode === currentMode) return cached;
+  return getModeCapabilities(currentMode);
 }
 
 /**
  * Convenience hook for checking if map should be shown
  */
 export function useShouldShowMap() {
-  return useRuntimeStore((state) => state.shouldShowMap());
+  return useRenderingProfile().map.visible;
 }
 
 /**
  * Convenience hook for checking if camera should be shown
  */
 export function useShouldShowCamera() {
-  return useRuntimeStore((state) => state.shouldShowCamera());
+  return useRenderingProfile().camera.visible;
 }
 
 /**
  * Convenience hook for checking if minimap should be shown
  */
 export function useShouldShowMinimap() {
-  return useRuntimeStore((state) => state.shouldShowMinimap());
+  return useRenderingProfile().minimap.visible;
 }
 
 /**
  * Convenience hook for checking if HUD should be shown
  */
 export function useShouldShowHud() {
-  return useRuntimeStore((state) => state.shouldShowHud());
+  return useRenderingProfile().hud.visible;
 }
 
 /**
  * Convenience hook for getting HUD density
  */
 export function useHudDensity() {
-  return useRuntimeStore((state) => state.getHudDensity());
+  return useRenderingProfile().hud.density;
 }

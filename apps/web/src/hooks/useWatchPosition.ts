@@ -2,29 +2,35 @@ import { useEffect, useRef } from 'react';
 import { useGPSStore } from '../stores/gps.store';
 
 /**
- * useWatchPosition hook skeleton
+ * useWatchPosition hook
  * - Starts/stops gps watch via `gps` store
- * - Exposes minimal API via gps store; keeps heavy logic in store or workers
+ * - Reacts to options changes (restarts GPS if options.accuracy or timeout change)
  * - Designed to be imported in top-level pages (e.g., Record / GPS screens)
  */
 export function useWatchPosition(autoStart = false, options?: PositionOptions) {
-  const startedRef = useRef(false);
   const start = useGPSStore((s) => s.startTracking);
   const stop = useGPSStore((s) => s.stopTracking);
+  const startedRef = useRef(false);
+  const optionsRef = useRef(options);
 
   useEffect(() => {
-    if (autoStart && !startedRef.current) {
+    if (!autoStart) return;
+
+    const prevOpts = optionsRef.current;
+    const accuracyChanged = prevOpts?.enableHighAccuracy !== options?.enableHighAccuracy;
+    const maxAgeChanged = prevOpts?.maximumAge !== options?.maximumAge;
+
+    if (!startedRef.current) {
       start(options);
       startedRef.current = true;
-    }
-    return () => {
-      // cleanup on unmount
+    } else if (accuracyChanged || maxAgeChanged) {
+      // Restart GPS with new options
       stop();
-    };
-  }, [autoStart]);
+      start(options);
+    }
 
-  return {
-    start,
-    stop
-  };
+    optionsRef.current = options;
+  }, [autoStart, options?.enableHighAccuracy, options?.maximumAge, options?.timeout, start, stop]);
+
+  return { start, stop };
 }

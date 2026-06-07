@@ -49,5 +49,16 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src')
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('leaflet') || id.includes('react-leaflet')) {
+            return 'vendor-leaflet';
+          }
+        }
+      }
+    }
   }
 });

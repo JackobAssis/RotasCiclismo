@@ -2,6 +2,7 @@ import React, { ReactNode, useMemo, useState, useCallback, createContext, useCon
 import { useRuntimeStore, useShouldShowHud, useHudDensity } from '../stores/runtime.store';
 import type { HudOverlayContext, HudWidgetConfig, HudWidget, HudWidgetRegistry, WidgetPosition, WidgetLayer } from '../modules/hud/types';
 import { HUD_Z_INDEX } from '../modules/hud/types';
+import { HudOverlayLayer } from './overlay/HudOverlayLayer';
 
 /**
  * Overlay Manager Architecture
@@ -104,21 +105,18 @@ export const OverlayManager: React.FC<OverlayManagerProps> = ({ children }) => {
       }));
 
       // Determine visibility based on HUD density and widget priority
-      let isVisible = config.visible ?? true;
-
-      if (shouldShowHud && hudDensity === 'minimal') {
-        // In minimal mode, only show high-priority widgets (status indicators)
-        isVisible = (config.priority ?? 0) >= 15;
-      } else if (!shouldShowHud) {
-        // If HUD is disabled by runtime mode, hide all widgets
-        isVisible = false;
-      }
-
-      if (!(key in visibility)) {
-        setVisibility((prev) => ({ ...prev, [key]: isVisible }));
-      }
+      setVisibility((prev) => {
+        if (key in prev) return prev;
+        let isVisible = config.visible ?? true;
+        if (shouldShowHud && hudDensity === 'minimal') {
+          isVisible = (config.priority ?? 0) >= 15;
+        } else if (!shouldShowHud) {
+          isVisible = false;
+        }
+        return { ...prev, [key]: isVisible };
+      });
     },
-    [visibility, shouldShowHud, hudDensity]
+    [shouldShowHud, hudDensity]
   );
 
   /**
@@ -210,172 +208,6 @@ export const OverlayManager: React.FC<OverlayManagerProps> = ({ children }) => {
         hudDensity={hudDensity}
       />
     </OverlayContext.Provider>
-  );
-};
-
-interface HudOverlayLayerProps {
-  registry: HudWidgetRegistry;
-  visibility: Record<string, boolean>;
-  positionOverrides: Record<string, WidgetPosition>;
-  hudDensity: 'full' | 'normal' | 'minimal';
-}
-
-/**
- * HudOverlayLayer Component
- *
- * Renders all registered widgets in proper layers and positions
- *
- * Runtime Mode Aware:
- * - Filters widgets based on HUD density setting
- * - Minimal mode: only shows critical widgets (high priority)
- * - Normal mode: shows standard widget set
- * - Full mode: shows all registered widgets
- *
- * Layout System:
- * - Uses CSS Grid for positioning
- * - Position classes map to grid areas
- * - Z-index groups organize layers
- * - Mobile-responsive layout
- *
- * Widget Boundaries:
- * - Each widget is isolated (pointer-events managed per widget)
- * - Interactive widgets get pointer-events: auto
- * - Non-interactive widgets get pointer-events: none
- * - Map interaction not blocked by overlay
- */
-const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
-  registry,
-  visibility,
-  positionOverrides,
-  hudDensity
-}) => {
-  // Group widgets by layer for proper z-index ordering
-  const widgetsByLayer = useMemo(() => {
-    const grouped: Record<WidgetLayer, Array<[string, HudWidgetConfig, HudWidget]>> = {
-      base: [],
-      interactive: [],
-      overlay: [],
-      modal: []
-    };
-
-    Object.entries(registry).forEach(([key, entry]) => {
-      if (visibility[key] !== false) {
-        // Apply HUD density filtering
-        let shouldInclude = true;
-
-        if (hudDensity === 'minimal') {
-          // Only include high-priority widgets (status indicators)
-          shouldInclude = (entry.config.priority ?? 0) >= 15;
-        } else if (hudDensity === 'normal') {
-          // Standard widgets (priority >= 8)
-          shouldInclude = (entry.config.priority ?? 0) >= 8;
-        }
-        // 'full' includes all widgets
-
-        if (shouldInclude) {
-          const position = positionOverrides[key] ?? entry.config.position;
-          grouped[entry.config.layer].push([key, { ...entry.config, position }, entry.component]);
-        }
-      }
-    });
-
-    return grouped;
-  }, [registry, visibility, positionOverrides, hudDensity]);
-
-  /**
-   * Get CSS classes for widget positioning
-   * Maps WidgetPosition to Tailwind grid/absolute positioning
-   */
-  const getPositionClasses = (position: WidgetPosition): string => {
-    const positionMap: Record<WidgetPosition, string> = {
-      'top-left': 'top-4 left-4',
-      'top-center': 'top-4 left-1/2 -translate-x-1/2',
-      'top-right': 'top-4 right-4',
-      'center-left': 'top-1/2 left-4 -translate-y-1/2',
-      'center-right': 'top-1/2 right-4 -translate-y-1/2',
-      'bottom-left': 'bottom-4 left-4',
-      'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2',
-      'bottom-right': 'bottom-4 right-4'
-    };
-    return positionMap[position];
-  };
-
-  /**
-   * Get z-index for layer
-   */
-  const getLayerZIndex = (layer: WidgetLayer): number => {
-    return HUD_Z_INDEX[`hud${layer.charAt(0).toUpperCase() + layer.slice(1)}` as keyof typeof HUD_Z_INDEX];
-  };
-
-  return (
-    <>
-      {/* Base layer - non-interactive status widgets */}
-      <div className="fixed inset-0 pointer-events-none z-[100]">
-        {widgetsByLayer.base.map(([key, config, Component]) => (
-          <div
-            key={key}
-            className={`absolute ${getPositionClasses(config.position)} pointer-events-none`}
-            style={{ zIndex: getLayerZIndex(config.layer) }}
-            data-widget-id={key}
-            data-widget-layer="base"
-          >
-            <Component label={config.label} />
-          </div>
-        ))}
-      </div>
-
-      {/* Interactive layer - widgets that may need clicks/touches */}
-      <div className="fixed inset-0 pointer-events-none z-[200]">
-        {widgetsByLayer.interactive.map(([key, config, Component]) => (
-          <div
-            key={key}
-            className={`absolute ${getPositionClasses(config.position)} pointer-events-auto`}
-            style={{ zIndex: getLayerZIndex(config.layer) }}
-            data-widget-id={key}
-            data-widget-layer="interactive"
-          >
-            <Component label={config.label} />
-          </div>
-        ))}
-      </div>
-
-      {/* Overlay layer - important UI that should always be visible */}
-      <div className="fixed inset-0 pointer-events-none z-[300]">
-        {widgetsByLayer.overlay.map(([key, config, Component]) => (
-          <div
-            key={key}
-            className={`absolute ${getPositionClasses(config.position)} pointer-events-auto`}
-            style={{ zIndex: getLayerZIndex(config.layer) }}
-            data-widget-id={key}
-            data-widget-layer="overlay"
-          >
-            <Component label={config.label} />
-          </div>
-        ))}
-      </div>
-
-      {/* Modal layer - dialogs, modals, etc. */}
-      <div className="fixed inset-0 pointer-events-none z-[400]">
-        {widgetsByLayer.modal.map(([key, config, Component]) => (
-          <div
-            key={key}
-            className={`absolute ${getPositionClasses(config.position)} pointer-events-auto`}
-            style={{ zIndex: getLayerZIndex(config.layer) }}
-            data-widget-id={key}
-            data-widget-layer="modal"
-          >
-            <Component label={config.label} />
-          </div>
-        ))}
-      </div>
-
-      {/* Future AR/navigation overlay placeholder */}
-      <div
-        className="fixed inset-0 pointer-events-none z-[500]"
-        data-component="ar-overlay-future"
-        title="Placeholder for future AR/navigation rendering"
-      />
-    </>
   );
 };
 

@@ -113,21 +113,23 @@ export const useGPSStore = create<GPSState>((set, get) => ({
   },
 
   handlePosition: (p) => {
-    // placeholder for filtering, smoothing, throttling
-    // e.g., drop low-accuracy fixes: if (p.accuracy && p.accuracy > threshold) return
-    const buffer = get().buffer;
-    buffer.push(p);
+    // Use immutable buffer update to ensure Zustand detects changes
+    const buffer = [...get().buffer, p];
     set({ lastPosition: p, buffer });
-    // optionally trigger immediate flush if batch size reached
+    // Immediate flush if batch size reached
     if (buffer.length >= get().flushBatchSize) get().flushBuffer();
   },
 
   flushBuffer: () => {
     const buf = get().buffer.slice();
     if (buf.length === 0) return;
-    // Emit buffered points via typed event bus. Emitting one-by-one preserves existing contracts
-    // while allowing future switch to batch events like 'points:batch'. Emission is decoupled
-    // from direct store writes — ride.store listens and appends points.
+    // Emit single batch event for efficient processing
+    try {
+      eventBus.emit('points:received', buf);
+    } catch (e) {
+      // swallow to keep pipeline resilient
+    }
+    // Legacy single-point emits for existing subscribers
     for (const pt of buf) {
       try {
         eventBus.emit('point:received', pt);
@@ -135,8 +137,7 @@ export const useGPSStore = create<GPSState>((set, get) => ({
         // swallow to keep pipeline resilient
       }
     }
-    // Emit a diagnostic event indicating a flush occurred. Consumers (debug UI, workers)
-    // can listen to this event to monitor flush frequency and buffer behavior.
+    // Emit a diagnostic event indicating a flush occurred
     try {
       eventBus.emit('gps:flushed', { count: buf.length, at: new Date().toISOString() });
     } catch (e) {

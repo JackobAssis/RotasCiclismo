@@ -211,21 +211,64 @@ export const useRideStore = create<RideState>((set, get) => ({
     set({ active: s });
   }
 }));
-{
-  // ensure we don't duplicate subscriptions if this file is re-imported
-  const unsubPoint = eventBus.on('point:received', (point) => {
+
+let unsubPointRide: (() => void) | null = null;
+let unsubPointsBatch: (() => void) | null = null;
+let unsubSnapshotRide: (() => void) | null = null;
+
+function subscribeToEvents() {
+  unsubPointRide?.();
+  unsubPointsBatch?.();
+  unsubSnapshotRide?.();
+
+  unsubPointRide = eventBus.on('point:received', (point) => {
     const state = useRideStore.getState();
-    if (state.status === 'active') {
-      state.addPoint(point);
+    if (state.status === 'active') state.addPoint(point);
+  });
+
+  unsubPointsBatch = eventBus.on('points:received', (points) => {
+    const state = useRideStore.getState();
+    if (state.status !== 'active' || !state.active) return;
+    const s = state.active;
+    s.route = s.route ?? [];
+    for (const point of points) {
+      const prev = s.route.length > 0 ? s.route[s.route.length - 1] : null;
+      if (prev) {
+        const dLat = ((point.latitude - prev.latitude) * Math.PI) / 180;
+        const dLon = ((point.longitude - prev.longitude) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) ** 2 +
+          Math.cos((prev.latitude * Math.PI) / 180) *
+            Math.cos((point.latitude * Math.PI) / 180) *
+            Math.sin(dLon / 2) ** 2;
+        s.distance = (s.distance ?? 0) + 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+      s.route.push(point);
+      s.maxSpeed = Math.max(s.maxSpeed ?? 0, point.speed ?? 0);
+      s.elevation = point.altitude ?? s.elevation ?? 0;
+    }
+    const duration = Math.floor((Date.now() - new Date(s.startedAt).getTime()) / 1000);
+    const hours = duration / 3600;
+    s.duration = duration;
+    s.averageSpeed = hours > 0 ? (s.distance ?? 0) / hours : 0;
+    useRideStore.setState({ active: { ...s } });
+    for (const point of points) {
+      try { eventBus.emit('ride:point:added', { rideId: s.id, point }); } catch {}
     }
   });
 
-  const unsubSnapshot = eventBus.on('snapshot:taken', (snapshot) => {
+  unsubSnapshotRide = eventBus.on('snapshot:taken', (snapshot) => {
     const state = useRideStore.getState();
-    if (state.status === 'active') {
-      state.addSnapshot(snapshot);
-    }
+    if (state.status === 'active') state.addSnapshot(snapshot);
   });
+}
 
-  // Keep unsub functions reachable if needed in future (not exposed now).
+subscribeToEvents();
+
+if (typeof import.meta !== 'undefined' && import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    unsubPointRide?.();
+    unsubPointsBatch?.();
+    unsubSnapshotRide?.();
+  });
 }

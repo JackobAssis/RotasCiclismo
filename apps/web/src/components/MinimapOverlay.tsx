@@ -1,23 +1,11 @@
 import React, { useMemo, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import { useRideStore } from '../stores/ride.store';
-import { useRenderingProfile } from '../stores/runtime.store';
+import { useRenderingProfile, useRuntimeStore } from '../stores/runtime.store';
+import { RuntimeMode } from '../modules/runtime/types';
 import useMinimapStore from '../stores/minimap.store';
-
-/**
- * Lightweight route sampling for minimap
- * Keeps small arrays for lightweight rendering
- */
-function sampleRoutePoints(points: any[], maxPoints: number = 60) {
-  if (!points || points.length <= maxPoints) return points;
-  const step = Math.ceil(points.length / maxPoints);
-  const sampled = [] as any[];
-  for (let i = 0; i < points.length; i += step) sampled.push(points[i]);
-  if (sampled[sampled.length - 1] !== points[points.length - 1]) sampled.push(points[points.length - 1]);
-  return sampled;
-}
-
-const DEFAULT_CENTER: [number, number] = [-23.5505, -46.6333];
+import { sampleRoutePoints, routePointsToLatLngs } from '../utils/geo';
+import { DEFAULT_CENTER } from '../utils/map';
 
 /**
  * MapInner: small helper to invalidate map size when expanded changes
@@ -49,6 +37,8 @@ const MapInner: React.FC<{ center: [number, number]; zoom: number; expanded: boo
  */
 const MinimapOverlay: React.FC = () => {
   const profile = useRenderingProfile();
+  const currentMode = useRuntimeStore((s) => s.currentMode);
+  const isCameraMode = currentMode === RuntimeMode.CAMERA_RECORD;
 
   const route = useRideStore((s) => s.active?.route ?? []);
   const latest = useRideStore((s) => {
@@ -60,21 +50,21 @@ const MinimapOverlay: React.FC = () => {
   const setExpanded = useMinimapStore((s) => s.setExpanded);
   const toggleExpanded = useMinimapStore((s) => s.toggleExpanded);
 
-  // Determine size from profile.minimap.scale
+  // Determine size from profile.minimap.scale; force small in camera mode
   const { sizeClass, expandedClass, mapZoom, maxPoints } = useMemo(() => {
-    const scale = profile.minimap.scale;
+    const scale = isCameraMode ? 'small' : profile.minimap.scale;
     if (scale === 'large') return { sizeClass: 'w-44 h-32', expandedClass: 'w-80 h-64', mapZoom: 14, maxPoints: 90 };
     if (scale === 'medium') return { sizeClass: 'w-36 h-28', expandedClass: 'w-72 h-56', mapZoom: 14, maxPoints: 70 };
     return { sizeClass: 'w-28 h-20', expandedClass: 'w-64 h-48', mapZoom: 13, maxPoints: 50 };
-  }, [profile.minimap.scale]);
+  }, [profile.minimap.scale, isCameraMode]);
 
-  const sampled = useMemo(() => sampleRoutePoints(route, maxPoints), [route, maxPoints]);
-  const polyline = useMemo(() => sampled.map((p) => [p.latitude, p.longitude] as [number, number]), [sampled]);
+  const polyline = useMemo(() => routePointsToLatLngs(sampleRoutePoints(route, maxPoints)), [route, maxPoints]);
 
   const center: [number, number] = latest ? [latest.latitude, latest.longitude] : DEFAULT_CENTER;
 
-  // Position classes based on profile.minimap.position
+  // Position classes based on profile.minimap.position; override in camera mode to avoid button collision
   const posClass = (() => {
+    if (isCameraMode) return 'top-4 right-4';
     const pos = profile.minimap.position;
     switch (pos) {
       case 'top-right':
@@ -126,7 +116,7 @@ const MinimapOverlay: React.FC = () => {
       role="button"
       aria-label={expanded ? 'Collapse minimap' : 'Expand minimap'}
     >
-      <div className={`w-full h-full rounded-lg overflow-hidden bg-black/30 backdrop-blur border border-white/10 shadow-lg ${expanded ? 'ring-2 ring-cyan-400/30' : ''}`}>
+      <div className={`w-full h-full rounded-lg overflow-hidden ${isCameraMode ? 'bg-black/20' : 'bg-black/30'} backdrop-blur border border-white/10 shadow-lg ${expanded ? 'ring-2 ring-cyan-400/30' : ''}`}>
         <div className="relative w-full h-full">
           <MapContainer
             center={center}

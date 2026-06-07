@@ -7,6 +7,7 @@ export type AppEvents = {
   'ride:resumed': { rideId: string; at: string };
   'ride:finished': { rideId: string; at: string; summary?: Partial<RideSession> };
   'point:received': RoutePoint;
+  'points:received': RoutePoint[];
   'ride:point:added': { rideId: string; point: RoutePoint };
   'snapshot:taken': Snapshot;
   'gps:flushed': { count: number; at: string };
