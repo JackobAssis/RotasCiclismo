@@ -114,7 +114,12 @@ export const useRideStore = create<RideState>((set, get) => ({
     const at = new Date().toISOString();
     const summary: Partial<RideSession> = {
       finishedAt: at,
-      ...meta,
+      distance: meta?.distance ?? s.distance ?? 0,
+      duration: meta?.duration ?? s.duration ?? 0,
+      averageSpeed: meta?.averageSpeed ?? s.averageSpeed ?? 0,
+      maxSpeed: meta?.maxSpeed ?? s.maxSpeed ?? 0,
+      elevation: meta?.elevation ?? s.elevation ?? 0,
+      calories: meta?.calories ?? s.calories ?? 0,
     };
     set({ active: { ...s, ...summary }, status: 'finished' });
     eventBus.emit('ride:finished', { rideId: s.id, at, summary });
