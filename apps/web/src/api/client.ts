@@ -370,7 +370,7 @@ function getApiBaseUrl(): string {
     window.location.hostname !== 'localhost' &&
     window.location.hostname !== '127.0.0.1'
   ) {
-    return 'https://cycling-api-production.up.railway.app/api';
+    return 'https://cycling-api-hiqq.onrender.com/api';
   }
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;

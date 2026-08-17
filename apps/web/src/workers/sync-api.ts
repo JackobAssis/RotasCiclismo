@@ -8,7 +8,7 @@ function getWorkerApiUrl(): string {
     self.location.hostname !== 'localhost' &&
     self.location.hostname !== '127.0.0.1'
   ) {
-    return 'https://cycling-api-production.up.railway.app/api';
+    return 'https://cycling-api-hiqq.onrender.com/api';
   }
   return 'http://localhost:3000/api';
 }
