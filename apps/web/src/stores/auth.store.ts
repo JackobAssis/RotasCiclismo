@@ -1,6 +1,6 @@
 /**
  * Auth Store: Zustand store for authentication state
- * 
+ *
  * Manages:
  * - User information
  * - Authentication tokens
@@ -8,7 +8,7 @@
  * - Auth loading/error states
  * - Session persistence
  * - Auto-hydration on app boot
- * 
+ *
  * ISOLATION PRINCIPLE:
  * This store is completely independent of runtime systems.
  * It doesn't interact with GPS, motion, or ride stores.
@@ -23,45 +23,52 @@ import type { UserProfileDto } from '../api/types';
 // TYPES
 // ============================================================================
 
-export type AuthStatus = 'idle' | 'authenticating' | 'hydrating' | 'authenticated' | 'unauthenticated' | 'error';
+export type AuthStatus =
+  'idle' | 'authenticating' | 'hydrating' | 'authenticated' | 'unauthenticated' | 'error';
 
 export interface AuthState {
   // User data
   user: UserProfileDto | null;
-  
+
   // Tokens
   accessToken: string | null;
   refreshToken: string | null;
-  
+
   // Status
   status: AuthStatus;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   // Last sync
   lastAuthAt: number | null;
   sessionExpiresAt: number | null;
-  
+
   // Actions
   setUser: (user: UserProfileDto | null) => void;
   setTokens: (tokens: { accessToken: string; refreshToken: string }) => void;
   setStatus: (status: AuthStatus) => void;
   setError: (error: string | null) => void;
   setIsLoading: (loading: boolean) => void;
-  
+
   // Auth flows
   setAuthenticating: () => void;
-  setAuthenticated: (user: UserProfileDto, tokens: { accessToken: string; refreshToken: string }) => void;
+  setAuthenticated: (
+    user: UserProfileDto,
+    tokens: { accessToken: string; refreshToken: string },
+  ) => void;
   setUnauthenticated: () => void;
-  
+
   // Session management
   startHydration: () => void;
-  completeHydration: (user: UserProfileDto | null, tokens: { accessToken: string; refreshToken: string } | null) => void;
-  
+  completeHydration: (
+    user: UserProfileDto | null,
+    tokens: { accessToken: string; refreshToken: string } | null,
+  ) => void;
+
   // Logout
   logout: () => void;
-  
+
   // Reset
   reset: () => void;
 }
@@ -72,12 +79,12 @@ export interface AuthState {
 
 /**
  * Auth Store
- * 
+ *
  * Persisted to localStorage:
  * - accessToken
  * - refreshToken
  * - user (basic info)
- * 
+ *
  * Memory only:
  * - status
  * - error
@@ -85,7 +92,7 @@ export interface AuthState {
  */
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       user: null,
       accessToken: null,
@@ -262,8 +269,8 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         lastAuthAt: state.lastAuthAt,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // ============================================================================

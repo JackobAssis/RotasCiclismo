@@ -12,7 +12,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateSnapshotDto } from '../../common/dtos';
 
 @Injectable()

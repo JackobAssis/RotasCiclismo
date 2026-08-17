@@ -1,6 +1,6 @@
 /**
  * API Initialization: Bootstrap the API layer on app startup
- * 
+ *
  * Called from main.tsx to initialize:
  * - Interceptors
  * - Token management
@@ -14,7 +14,7 @@ import { connectivityService } from './connectivity.service';
 
 /**
  * Initialize API layer
- * 
+ *
  * Called once during app startup
  */
 export function initializeApiLayer(options: {

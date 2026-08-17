@@ -7,12 +7,7 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-export function EmptyState({
-  icon,
-  title,
-  description,
-  action,
-}: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
     <Card variant="flat" padding="lg" className="text-center">
       <div className="flex flex-col items-center gap-3 py-8">
@@ -23,9 +18,7 @@ export function EmptyState({
         )}
         <div>
           <p className="text-base font-medium text-white">{title}</p>
-          {description && (
-            <p className="text-sm text-gray-500 mt-1">{description}</p>
-          )}
+          {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
         </div>
         {action && <div className="mt-2">{action}</div>}
       </div>

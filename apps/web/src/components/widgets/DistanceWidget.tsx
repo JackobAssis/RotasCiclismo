@@ -22,9 +22,18 @@ export const DistanceWidget = memo(() => {
   const overlay = useOverlay();
 
   useEffect(() => {
-    overlay.registerWidget('distance', {
-      id: 'distance', label: 'Distance', position: 'bottom-left', layer: 'base', visible: true, priority: 15
-    }, DistanceWidgetComponent);
+    overlay.registerWidget(
+      'distance',
+      {
+        id: 'distance',
+        label: 'Distance',
+        position: 'bottom-left',
+        layer: 'base',
+        visible: true,
+        priority: 15,
+      },
+      DistanceWidgetComponent,
+    );
     return () => overlay.unregisterWidget('distance');
   }, [overlay]);
 

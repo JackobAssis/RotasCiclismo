@@ -8,7 +8,7 @@
 import { z } from 'zod';
 
 const configSchema = z.object({
-  node_env: z.enum(['development', 'staging', 'production']).default('development'),
+  node_env: z.enum(['development', 'test', 'staging', 'production']).default('development'),
   port: z.coerce.number().int().positive().max(65535).default(3000),
   log_level: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   database_url: z.string().url('DATABASE_URL must be a valid connection string'),

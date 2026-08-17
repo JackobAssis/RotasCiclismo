@@ -8,10 +8,22 @@
  * DELETE /snapshots/:id                 - Delete snapshot
  */
 
-import { Controller, Post, Get, Patch, Delete, Param, Body, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { SnapshotsService } from './snapshots.service';
 import { CreateSnapshotDto } from '../../common/dtos';
 import { JwtAuthGuard } from '../../common/auth.guard';
+import { AuthenticatedRequest } from '../../common/jwt.types';
 
 @Controller('rides/:rideId/snapshots')
 @UseGuards(JwtAuthGuard)
@@ -27,7 +39,7 @@ export class SnapshotsController {
   @Post()
   async createSnapshot(
     @Param('rideId') rideId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: CreateSnapshotDto,
   ) {
     return this.snapshotsService.createSnapshot(rideId, req.user.userId, dto);
@@ -41,7 +53,7 @@ export class SnapshotsController {
   @Get()
   async getRideSnapshots(
     @Param('rideId') rideId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('skip') skip?: string,
     @Query('take') take?: string,
   ) {
@@ -66,10 +78,15 @@ export class SnapshotsManagementController {
   @Patch(':id/status')
   async updateUploadStatus(
     @Param('id') snapshotId: string,
-    @Request() req: any,
-    @Body() body: { status: string; storageUrl?: string },
+    @Request() req: AuthenticatedRequest,
+    @Body() body: { status: 'COMPLETED' | 'FAILED' | 'UPLOADING'; storageUrl?: string },
   ) {
-    return this.snapshotsService.updateUploadStatus(snapshotId, req.user.userId, body.status as any, body.storageUrl);
+    return this.snapshotsService.updateUploadStatus(
+      snapshotId,
+      req.user.userId,
+      body.status,
+      body.storageUrl,
+    );
   }
 
   /**
@@ -78,7 +95,10 @@ export class SnapshotsManagementController {
    * DELETE /snapshots/:id
    */
   @Delete(':id')
-  async deleteSnapshot(@Param('id') snapshotId: string, @Request() req: any): Promise<{ success: boolean }> {
+  async deleteSnapshot(
+    @Param('id') snapshotId: string,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ success: boolean }> {
     await this.snapshotsService.deleteSnapshot(snapshotId, req.user.userId);
     return { success: true };
   }

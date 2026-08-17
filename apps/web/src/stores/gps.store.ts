@@ -2,6 +2,12 @@ import create from 'zustand';
 import type { RoutePoint } from '../../../../packages/types/src/index';
 import { eventBus } from '../lib/eventBus';
 
+declare global {
+  interface Window {
+    __gps_cleanup?: () => void;
+  }
+}
+
 /**
  * GPS module store skeleton
  * Responsibilities:
@@ -48,7 +54,7 @@ export const useGPSStore = create<GPSState>((set, get) => ({
     const posOptions: PositionOptions = {
       enableHighAccuracy: options?.enableHighAccuracy ?? false,
       maximumAge: options?.maximumAge ?? 0,
-      timeout: options?.timeout ?? Infinity
+      timeout: options?.timeout ?? Infinity,
     };
 
     const id = navigator.geolocation.watchPosition(
@@ -59,9 +65,9 @@ export const useGPSStore = create<GPSState>((set, get) => ({
             longitude: pos.coords.longitude,
             speed: pos.coords.speed ?? null,
             altitude: pos.coords.altitude ?? null,
-            heading: (pos.coords as any).heading ?? null,
+            heading: pos.coords.heading ?? null,
             accuracy: pos.coords.accuracy ?? null,
-            timestamp: new Date(pos.timestamp).toISOString()
+            timestamp: new Date(pos.timestamp).toISOString(),
           };
           // lightweight local update
           get().handlePosition(point);
@@ -70,12 +76,12 @@ export const useGPSStore = create<GPSState>((set, get) => ({
           set({ status: 'error' });
         }
       },
-      (err) => {
+      () => {
         set({ status: 'error' });
         // In future: emit typed error events
         // eventBus.emit('gps:error', { code: err.code, message: err.message });
       },
-      posOptions
+      posOptions,
     );
 
     // setup periodic flush
@@ -88,7 +94,7 @@ export const useGPSStore = create<GPSState>((set, get) => ({
     set({ watchId: id as unknown as number, status: 'watching' });
 
     // store cleanup hook on window for safety (in case stopTracking not called)
-    (window as any).__gps_cleanup = () => {
+    window.__gps_cleanup = () => {
       try {
         navigator.geolocation.clearWatch(id as number);
       } catch (e) {
@@ -145,7 +151,7 @@ export const useGPSStore = create<GPSState>((set, get) => ({
     }
     // Clear buffer
     set({ buffer: [] });
-  }
+  },
 }));
 
 // Notes:

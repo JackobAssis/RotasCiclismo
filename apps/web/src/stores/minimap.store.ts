@@ -6,10 +6,10 @@ type MinimapStore = {
   toggleExpanded: () => void;
 };
 
-export const useMinimapStore = create<MinimapStore>((set, get) => ({
+export const useMinimapStore = create<MinimapStore>((set) => ({
   expanded: false,
   setExpanded: (v: boolean) => set({ expanded: v }),
-  toggleExpanded: () => set((s) => ({ expanded: !s.expanded }))
+  toggleExpanded: () => set((s) => ({ expanded: !s.expanded })),
 }));
 
 export default useMinimapStore;

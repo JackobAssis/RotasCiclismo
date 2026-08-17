@@ -27,8 +27,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
 
       set({ status: 'loaded' });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Falha ao carregar perfil';
+      const message = err instanceof Error ? err.message : 'Falha ao carregar perfil';
       set({ status: 'error', error: message });
     }
   },
@@ -53,8 +52,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
       // Rollback on failure
       useAuthStore.setState({ user: previousUser });
 
-      const message =
-        err instanceof Error ? err.message : 'Falha ao atualizar perfil';
+      const message = err instanceof Error ? err.message : 'Falha ao atualizar perfil';
       set({ status: 'error', error: message });
       throw err;
     }

@@ -49,7 +49,10 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -82,7 +85,7 @@ export const useRideStore = create<RideState>((set, get) => ({
       calories: 0,
       elevation: 0,
       route: [],
-      snapshots: []
+      snapshots: [],
     };
     set({ active: initial, status: 'active' });
     // emit typed event for other modules
@@ -111,7 +114,7 @@ export const useRideStore = create<RideState>((set, get) => ({
     const at = new Date().toISOString();
     const summary: Partial<RideSession> = {
       finishedAt: at,
-      ...meta
+      ...meta,
     };
     set({ active: { ...s, ...summary }, status: 'finished' });
     eventBus.emit('ride:finished', { rideId: s.id, at, summary });
@@ -136,7 +139,7 @@ export const useRideStore = create<RideState>((set, get) => ({
         prevPoint.latitude,
         prevPoint.longitude,
         point.latitude,
-        point.longitude
+        point.longitude,
       );
       newDistance += distanceToPoint;
     }
@@ -166,8 +169,8 @@ export const useRideStore = create<RideState>((set, get) => ({
         maxSpeed,
         elevation,
         duration,
-        averageSpeed
-      }
+        averageSpeed,
+      },
     });
 
     // Emit event for persistence layer
@@ -209,7 +212,7 @@ export const useRideStore = create<RideState>((set, get) => ({
     s.snapshots = s.snapshots ?? [];
     s.snapshots.push(...snapshots);
     set({ active: s });
-  }
+  },
 }));
 
 let unsubPointRide: (() => void) | null = null;
@@ -253,7 +256,11 @@ function subscribeToEvents() {
     s.averageSpeed = hours > 0 ? (s.distance ?? 0) / hours : 0;
     useRideStore.setState({ active: { ...s } });
     for (const point of points) {
-      try { eventBus.emit('ride:point:added', { rideId: s.id, point }); } catch {}
+      try {
+        eventBus.emit('ride:point:added', { rideId: s.id, point });
+      } catch {
+        // ignore
+      }
     }
   });
 

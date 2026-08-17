@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 
-export function useMediaStream(videoRef: React.RefObject<HTMLVideoElement | null>, stream: MediaStream | null) {
+export function useMediaStream(
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  stream: MediaStream | null,
+) {
   const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -11,7 +14,7 @@ export function useMediaStream(videoRef: React.RefObject<HTMLVideoElement | null
     if (stream) {
       const attachId = setTimeout(() => {
         try {
-          (el as any).srcObject = stream;
+          el.srcObject = stream;
           setTimeout(() => {
             el.play().catch(() => {});
           }, 50);
@@ -23,8 +26,10 @@ export function useMediaStream(videoRef: React.RefObject<HTMLVideoElement | null
       cleanupRef.current = () => clearTimeout(attachId);
     } else {
       try {
-        (el as any).srcObject = null;
-      } catch (e) {}
+        el.srcObject = null;
+      } catch (e) {
+        // ignore
+      }
     }
   }, [stream, videoRef]);
 
@@ -33,7 +38,11 @@ export function useMediaStream(videoRef: React.RefObject<HTMLVideoElement | null
       cleanupRef.current?.();
       const el = videoRef.current;
       if (el) {
-        try { (el as any).srcObject = null; } catch (e) {}
+        try {
+          el.srcObject = null;
+        } catch (e) {
+          // ignore
+        }
       }
     };
   }, [videoRef]);

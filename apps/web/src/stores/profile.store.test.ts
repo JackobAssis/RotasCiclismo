@@ -24,10 +24,17 @@ describe('ProfileStore', () => {
   });
 
   it('updateProfile saves optimistically', async () => {
-    const mockUser = { id: 'user-1', email: 'a@b.com', username: 'u', displayName: 'Old', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' };
+    const mockUser = {
+      id: 'user-1',
+      email: 'a@b.com',
+      username: 'u',
+      displayName: 'Old',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
     useAuthStore.setState({ user: mockUser });
 
-    (apiService.updateProfile as any).mockResolvedValue({
+    vi.mocked(apiService.updateProfile).mockResolvedValue({
       ...mockUser,
       displayName: 'New Name',
     });
@@ -40,10 +47,17 @@ describe('ProfileStore', () => {
 
   it('updateProfile handles error and rolls back', async () => {
     useAuthStore.setState({
-      user: { id: 'user-1', email: 'a@b.com', username: 'u', displayName: 'Old', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      user: {
+        id: 'user-1',
+        email: 'a@b.com',
+        username: 'u',
+        displayName: 'Old',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
     });
 
-    (apiService.updateProfile as any).mockRejectedValue(new Error('Update failed'));
+    vi.mocked(apiService.updateProfile).mockRejectedValue(new Error('Update failed'));
 
     await expect(
       useProfileStore.getState().updateProfile({ displayName: 'New Name' }),

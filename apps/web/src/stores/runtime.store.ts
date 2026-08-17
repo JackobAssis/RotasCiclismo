@@ -9,7 +9,7 @@ import {
   getRenderingProfile,
   getModeCapabilities,
   isValidModeTransition,
-  findApplicableTransitions
+  findApplicableTransitions,
 } from '../modules/runtime/types';
 
 /**
@@ -101,7 +101,7 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
       deviceCapabilities: initialDeviceCapabilities,
       adaptToLowBattery: true,
       batteryPercent: 100,
-      isThermalThrottling: false
+      isThermalThrottling: false,
     },
 
     _cachedProfile: null,
@@ -123,10 +123,10 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
         currentMode: mode,
         runtimeState: {
           ...get().runtimeState,
-          currentMode: mode
+          currentMode: mode,
         },
         _cachedProfile: null,
-        _cachedCapabilities: null
+        _cachedCapabilities: null,
       });
     },
 
@@ -148,10 +148,10 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
         currentMode: toMode,
         runtimeState: {
           ...get().runtimeState,
-          currentMode: toMode
+          currentMode: toMode,
         },
         _cachedProfile: null,
-        _cachedCapabilities: null
+        _cachedCapabilities: null,
       });
 
       return true;
@@ -189,12 +189,13 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
      * Update battery status
      * Triggers automatic mode transition if needed
      */
-    updateBatteryStatus: (percent: number, isLowPower: boolean) => {
+    updateBatteryStatus: (percent: number, _isLowPower: boolean) => {
+      void _isLowPower;
       set({
         runtimeState: {
           ...get().runtimeState,
-          batteryPercent: percent
-        }
+          batteryPercent: percent,
+        },
       });
 
       // Check if automatic transition should occur
@@ -209,8 +210,8 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
       set({
         runtimeState: {
           ...get().runtimeState,
-          isThermalThrottling
-        }
+          isThermalThrottling,
+        },
       });
 
       // Future: Additional thermal optimizations
@@ -227,8 +228,8 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
       set({
         runtimeState: {
           ...get().runtimeState,
-          adaptToLowBattery: adapt
-        }
+          adaptToLowBattery: adapt,
+        },
       });
     },
 
@@ -336,8 +337,8 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => {
       battery: get().runtimeState.batteryPercent,
       isLowPowerMode: false, // TODO: Implement actual battery status detection
       isThermalThrottling: get().runtimeState.isThermalThrottling,
-      profile: get().getRenderingProfile()
-    })
+      profile: get().getRenderingProfile(),
+    }),
   };
 });
 

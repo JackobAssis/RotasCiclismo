@@ -28,5 +28,11 @@ export function createPositionMarker(heading?: number | null): L.DivIcon {
         <circle cx="16" cy="16" r="10" fill="none" stroke="#93c5fd" stroke-width="1" opacity="0.6"/>
       </svg>
     </div>`;
-  return L.divIcon({ html: markerHtml, iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -16], className: 'position-marker' });
+  return L.divIcon({
+    html: markerHtml,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+    className: 'position-marker',
+  });
 }

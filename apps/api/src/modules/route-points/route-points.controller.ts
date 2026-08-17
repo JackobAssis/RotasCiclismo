@@ -8,10 +8,21 @@
  * DELETE /rides/:id/points          - Delete all points
  */
 
-import { Controller, Post, Get, Delete, Param, Body, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { RoutePointsService } from './route-points.service';
 import { CreateRoutePointDto, BulkCreateRoutePointsDto } from '../../common/dtos';
 import { JwtAuthGuard } from '../../common/auth.guard';
+import { AuthenticatedRequest } from '../../common/jwt.types';
 
 @Controller('rides/:rideId/points')
 @UseGuards(JwtAuthGuard)
@@ -27,7 +38,7 @@ export class RoutePointsController {
   @Post()
   async createRoutePoint(
     @Param('rideId') rideId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: CreateRoutePointDto,
   ) {
     return this.routePointsService.createRoutePoint(rideId, req.user.userId, dto);
@@ -42,7 +53,7 @@ export class RoutePointsController {
   @Post('bulk')
   async bulkCreateRoutePoints(
     @Param('rideId') rideId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: BulkCreateRoutePointsDto,
   ) {
     return this.routePointsService.bulkCreateRoutePoints(rideId, req.user.userId, dto);
@@ -56,7 +67,7 @@ export class RoutePointsController {
   @Get()
   async getRoutePoints(
     @Param('rideId') rideId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('skip') skip?: string,
     @Query('take') take?: string,
   ) {
@@ -72,7 +83,7 @@ export class RoutePointsController {
    * DELETE /rides/:id/points
    */
   @Delete()
-  async deleteRoutePoints(@Param('rideId') rideId: string, @Request() req: any) {
+  async deleteRoutePoints(@Param('rideId') rideId: string, @Request() req: AuthenticatedRequest) {
     return this.routePointsService.deleteRoutePoints(rideId, req.user.userId);
   }
 }

@@ -8,23 +8,31 @@ type CameraStoreState = {
   error: string | null;
   facingMode: string;
   deviceLabel: string;
-  errorType: 'PERMISSION_DENIED' | 'NOT_FOUND' | 'IN_USE' | 'NOT_SUPPORTED' | 'TIMEOUT' | 'UNKNOWN' | null;
+  errorType:
+    'PERMISSION_DENIED' | 'NOT_FOUND' | 'IN_USE' | 'NOT_SUPPORTED' | 'TIMEOUT' | 'UNKNOWN' | null;
 
   // Actions
-  requestPermissionAndStart: (options?: { fps?: number; resolution?: '720p' | '1080p' }) => Promise<boolean>;
+  requestPermissionAndStart: (options?: {
+    fps?: number;
+    resolution?: '720p' | '1080p';
+  }) => Promise<boolean>;
   startStream: (options?: { fps?: number; resolution?: '720p' | '1080p' }) => Promise<boolean>;
   stopStream: () => void;
 };
 
 const GET_USERMEDIA_TIMEOUT = 15000; // 15s max for camera initialization
 
-function getUserMediaWithTimeout(constraints: MediaStreamConstraints, timeoutMs: number): Promise<MediaStream> {
+function getUserMediaWithTimeout(
+  constraints: MediaStreamConstraints,
+  timeoutMs: number,
+): Promise<MediaStream> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new DOMException('Camera initialization timed out', 'TimeoutError'));
     }, timeoutMs);
 
-    navigator.mediaDevices.getUserMedia(constraints as any)
+    navigator.mediaDevices
+      .getUserMedia(constraints)
       .then((stream) => {
         clearTimeout(timer);
         resolve(stream);
@@ -36,9 +44,10 @@ function getUserMediaWithTimeout(constraints: MediaStreamConstraints, timeoutMs:
   });
 }
 
-function classifyCameraError(err: any): CameraStoreState['errorType'] {
+function classifyCameraError(err: unknown): CameraStoreState['errorType'] {
   if (!err) return 'UNKNOWN';
-  const name = err.name ?? err.constructor?.name ?? '';
+  const e = err as { name?: string; constructor?: { name?: string } };
+  const name = e.name ?? e.constructor?.name ?? '';
   if (name === 'NotAllowedError') return 'PERMISSION_DENIED';
   if (name === 'NotFoundError') return 'NOT_FOUND';
   if (name === 'NotReadableError') return 'IN_USE';
@@ -49,12 +58,18 @@ function classifyCameraError(err: any): CameraStoreState['errorType'] {
 
 function getUserMediaErrorMessage(errorType: CameraStoreState['errorType']): string {
   switch (errorType) {
-    case 'PERMISSION_DENIED': return 'Permissão de câmera negada. Permita o acesso nas configurações do dispositivo.';
-    case 'NOT_FOUND': return 'Nenhuma câmera encontrada neste dispositivo.';
-    case 'IN_USE': return 'Câmera está sendo usada por outro aplicativo. Feche-o e tente novamente.';
-    case 'NOT_SUPPORTED': return 'Câmera não suportada neste dispositivo.';
-    case 'TIMEOUT': return 'A câmera não respondeu. Verifique se está disponível.';
-    default: return 'Erro ao acessar a câmera. Tente novamente.';
+    case 'PERMISSION_DENIED':
+      return 'Permissão de câmera negada. Permita o acesso nas configurações do dispositivo.';
+    case 'NOT_FOUND':
+      return 'Nenhuma câmera encontrada neste dispositivo.';
+    case 'IN_USE':
+      return 'Câmera está sendo usada por outro aplicativo. Feche-o e tente novamente.';
+    case 'NOT_SUPPORTED':
+      return 'Câmera não suportada neste dispositivo.';
+    case 'TIMEOUT':
+      return 'A câmera não respondeu. Verifique se está disponível.';
+    default:
+      return 'Erro ao acessar a câmera. Tente novamente.';
   }
 }
 
@@ -76,7 +91,11 @@ export const useCameraStore = create<CameraStoreState>((set, get) => ({
     // Kill any existing stream before requesting a new one
     if (state.stream) {
       state.stream.getTracks().forEach((t) => {
-        try { t.stop(); } catch (e) { /* ignore */ }
+        try {
+          t.stop();
+        } catch (e) {
+          /* ignore */
+        }
       });
     }
     set({ stream: null, status: CameraStatus.INITIALIZING, error: null, errorType: null });
@@ -89,7 +108,7 @@ export const useCameraStore = create<CameraStoreState>((set, get) => ({
       }
       set({ permission: CameraPermissionState.DENIED, status: CameraStatus.STOPPED });
       return false;
-    } catch (e: any) {
+    } catch (e) {
       const errorType = classifyCameraError(e);
       const message = getUserMediaErrorMessage(errorType);
       set({ error: message, errorType, status: CameraStatus.ERROR });
@@ -104,11 +123,19 @@ export const useCameraStore = create<CameraStoreState>((set, get) => ({
       return true;
     }
 
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
       throw new DOMException('Camera API not available', 'NotSupportedError');
     }
 
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    if (
+      location.protocol !== 'https:' &&
+      location.hostname !== 'localhost' &&
+      location.hostname !== '127.0.0.1'
+    ) {
       throw new DOMException('Camera requires HTTPS connection', 'NotSupportedError');
     }
 
@@ -118,8 +145,12 @@ export const useCameraStore = create<CameraStoreState>((set, get) => ({
     const height = resolution === '1080p' ? 1080 : 720;
 
     // Try cameras in order: environment → any → user
-    const facingModes: Array<'environment' | 'user' | undefined> = ['environment', undefined, 'user'];
-    let lastError: Error | null = null;
+    const facingModes: Array<'environment' | 'user' | undefined> = [
+      'environment',
+      undefined,
+      'user',
+    ];
+    let lastError: unknown = null;
 
     for (const facingMode of facingModes) {
       try {
@@ -143,16 +174,20 @@ export const useCameraStore = create<CameraStoreState>((set, get) => ({
           stream,
           status: CameraStatus.STREAMING,
           permission: CameraPermissionState.GRANTED,
-          facingMode: (settings as any).facingMode ?? facingMode ?? 'environment',
+          facingMode: settings.facingMode ?? facingMode ?? 'environment',
           deviceLabel: track.label || 'Camera',
           error: null,
           errorType: null,
         });
         return true;
-      } catch (err: any) {
+      } catch (err) {
         lastError = err;
+        const name =
+          typeof err === 'object' && err !== null && 'name' in err
+            ? String((err as { name?: unknown }).name)
+            : '';
         // Only retry on NotFoundError or NotReadableError (camera in use)
-        if (err.name !== 'NotFoundError' && err.name !== 'NotReadableError') {
+        if (name !== 'NotFoundError' && name !== 'NotReadableError') {
           break;
         }
       }
@@ -165,7 +200,11 @@ export const useCameraStore = create<CameraStoreState>((set, get) => ({
     const s = get().stream;
     if (s) {
       s.getTracks().forEach((t) => {
-        try { t.stop(); } catch (e) { /* ignore */ }
+        try {
+          t.stop();
+        } catch (e) {
+          /* ignore */
+        }
       });
     }
     set({ stream: null, status: CameraStatus.STOPPED, errorType: null });

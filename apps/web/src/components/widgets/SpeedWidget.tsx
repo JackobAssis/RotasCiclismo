@@ -6,7 +6,7 @@ import type { HudWidget } from '../../modules/hud/types';
 const SpeedWidgetComponent: HudWidget = memo(({ label = 'Speed' }) => {
   const speed = useRideStore((state) => {
     const route = state.active?.route;
-    return route && route.length > 0 ? route[route.length - 1].speed ?? 0 : 0;
+    return route && route.length > 0 ? (route[route.length - 1].speed ?? 0) : 0;
   });
 
   const displaySpeed = (speed || 0).toFixed(1);
@@ -26,9 +26,18 @@ export const SpeedWidget = memo(() => {
   const overlay = useOverlay();
 
   useEffect(() => {
-    overlay.registerWidget('speed', {
-      id: 'speed', label: 'Speed', position: 'bottom-center', layer: 'base', visible: true, priority: 20
-    }, SpeedWidgetComponent);
+    overlay.registerWidget(
+      'speed',
+      {
+        id: 'speed',
+        label: 'Speed',
+        position: 'bottom-center',
+        layer: 'base',
+        visible: true,
+        priority: 20,
+      },
+      SpeedWidgetComponent,
+    );
     return () => overlay.unregisterWidget('speed');
   }, [overlay]);
 

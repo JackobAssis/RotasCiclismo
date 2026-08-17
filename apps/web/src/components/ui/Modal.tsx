@@ -8,13 +8,7 @@ interface ModalProps {
   actions?: React.ReactNode;
 }
 
-export function Modal({
-  open,
-  onClose,
-  title,
-  children,
-  actions,
-}: ModalProps) {
+export function Modal({ open, onClose, title, children, actions }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,11 +53,7 @@ export function Modal({
           </div>
         )}
         <div className="px-5 py-3">{children}</div>
-        {actions && (
-          <div className="flex justify-end gap-2 px-5 pb-5 pt-3">
-            {actions}
-          </div>
-        )}
+        {actions && <div className="flex justify-end gap-2 px-5 pb-5 pt-3">{actions}</div>}
       </div>
     </div>
   );

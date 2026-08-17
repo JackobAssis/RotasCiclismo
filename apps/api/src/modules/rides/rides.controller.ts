@@ -11,10 +11,22 @@
  * GET    /rides/:id/with-route - Get ride with full route
  */
 
-import { Controller, Post, Get, Patch, Delete, Param, Body, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { RidesService, RideResponseDto } from './rides.service';
 import { CreateRideDto, UpdateRideDto, FinishRideDto } from '../../common/dtos';
 import { JwtAuthGuard } from '../../common/auth.guard';
+import { AuthenticatedRequest } from '../../common/jwt.types';
 
 @Controller('rides')
 @UseGuards(JwtAuthGuard)
@@ -28,7 +40,10 @@ export class RidesController {
    * Body: { id, mode, startedAt, title?, description?, tags? }
    */
   @Post()
-  async createRide(@Request() req: any, @Body() dto: CreateRideDto): Promise<RideResponseDto> {
+  async createRide(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: CreateRideDto,
+  ): Promise<RideResponseDto> {
     return this.ridesService.createRide(req.user.userId, dto);
   }
 
@@ -39,7 +54,7 @@ export class RidesController {
    */
   @Get()
   async getUserRides(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
@@ -57,7 +72,10 @@ export class RidesController {
    * GET /rides/:id
    */
   @Get(':id')
-  async getRide(@Param('id') rideId: string, @Request() req: any): Promise<RideResponseDto> {
+  async getRide(
+    @Param('id') rideId: string,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<RideResponseDto> {
     return this.ridesService.getRide(rideId, req.user.userId);
   }
 
@@ -67,7 +85,7 @@ export class RidesController {
    * GET /rides/:id/with-route
    */
   @Get(':id/with-route')
-  async getRideWithRoute(@Param('id') rideId: string, @Request() req: any) {
+  async getRideWithRoute(@Param('id') rideId: string, @Request() req: AuthenticatedRequest) {
     return this.ridesService.getRideWithRoute(rideId, req.user.userId);
   }
 
@@ -78,7 +96,11 @@ export class RidesController {
    * Body: { title?, description?, distance?, duration?, ... }
    */
   @Patch(':id')
-  async updateRide(@Param('id') rideId: string, @Request() req: any, @Body() dto: UpdateRideDto): Promise<RideResponseDto> {
+  async updateRide(
+    @Param('id') rideId: string,
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: UpdateRideDto,
+  ): Promise<RideResponseDto> {
     return this.ridesService.updateRide(rideId, req.user.userId, dto);
   }
 
@@ -89,7 +111,11 @@ export class RidesController {
    * Body: { finishedAt, distance, duration, averageSpeed, maxSpeed }
    */
   @Post(':id/finish')
-  async finishRide(@Param('id') rideId: string, @Request() req: any, @Body() dto: FinishRideDto): Promise<RideResponseDto> {
+  async finishRide(
+    @Param('id') rideId: string,
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: FinishRideDto,
+  ): Promise<RideResponseDto> {
     return this.ridesService.finishRide(rideId, req.user.userId, dto);
   }
 
@@ -99,7 +125,10 @@ export class RidesController {
    * DELETE /rides/:id
    */
   @Delete(':id')
-  async deleteRide(@Param('id') rideId: string, @Request() req: any): Promise<{ success: boolean }> {
+  async deleteRide(
+    @Param('id') rideId: string,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ success: boolean }> {
     await this.ridesService.deleteRide(rideId, req.user.userId);
     return { success: true };
   }

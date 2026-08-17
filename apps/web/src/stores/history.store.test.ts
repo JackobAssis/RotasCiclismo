@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useHistoryStore } from './history.store';
+import type { PaginatedResponseDto, RideDto } from '../api/types';
 
 vi.mock('../services/api.service', () => ({
   apiService: {
@@ -7,7 +8,31 @@ vi.mock('../services/api.service', () => ({
   },
 }));
 
+vi.mock('../services/storage.service', () => ({
+  storageService: {
+    cacheRides: vi.fn().mockResolvedValue(undefined),
+    getCachedRides: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 import { apiService } from '../services/api.service';
+
+function makeRide(id: string, overrides: Partial<RideDto> = {}): RideDto {
+  return {
+    id,
+    userId: 'user-1',
+    mode: 'GPS_ONLY',
+    status: 'FINISHED',
+    startedAt: '2026-01-01T00:00:00.000Z',
+    distance: 0,
+    duration: 0,
+    averageSpeed: 0,
+    maxSpeed: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
 
 describe('HistoryStore', () => {
   beforeEach(() => {
@@ -25,10 +50,10 @@ describe('HistoryStore', () => {
   });
 
   it('fetchRides loads rides and updates state', async () => {
-    const mockResponse = {
+    const mockResponse: PaginatedResponseDto<RideDto> = {
       data: [
-        { id: 'ride-1', title: 'Morning Ride', status: 'FINISHED', distance: 10000 },
-        { id: 'ride-2', title: 'Evening Ride', status: 'FINISHED', distance: 5000 },
+        makeRide('ride-1', { title: 'Morning Ride', status: 'FINISHED', distance: 10000 }),
+        makeRide('ride-2', { title: 'Evening Ride', status: 'FINISHED', distance: 5000 }),
       ],
       total: 2,
       page: 1,
@@ -36,7 +61,7 @@ describe('HistoryStore', () => {
       hasMore: false,
     };
 
-    (apiService.listRides as any).mockResolvedValue(mockResponse);
+    vi.mocked(apiService.listRides).mockResolvedValue(mockResponse);
 
     await useHistoryStore.getState().fetchRides();
 
@@ -48,7 +73,7 @@ describe('HistoryStore', () => {
   });
 
   it('fetchRides handles error', async () => {
-    (apiService.listRides as any).mockRejectedValue(new Error('Network error'));
+    vi.mocked(apiService.listRides).mockRejectedValue(new Error('Network error'));
 
     await useHistoryStore.getState().fetchRides();
 
@@ -58,24 +83,22 @@ describe('HistoryStore', () => {
   });
 
   it('loadMore loads next page', async () => {
-    const page1 = {
-      data: [{ id: 'ride-1' }],
+    const page1: PaginatedResponseDto<RideDto> = {
+      data: [makeRide('ride-1')],
       total: 3,
       page: 1,
       limit: 1,
       hasMore: true,
     };
-    const page2 = {
-      data: [{ id: 'ride-2' }],
+    const page2: PaginatedResponseDto<RideDto> = {
+      data: [makeRide('ride-2')],
       total: 3,
       page: 2,
       limit: 1,
       hasMore: true,
     };
 
-    (apiService.listRides as any)
-      .mockResolvedValueOnce(page1)
-      .mockResolvedValueOnce(page2);
+    vi.mocked(apiService.listRides).mockResolvedValueOnce(page1).mockResolvedValueOnce(page2);
 
     await useHistoryStore.getState().fetchRides(1);
     expect(useHistoryStore.getState().rides).toHaveLength(1);
@@ -85,7 +108,7 @@ describe('HistoryStore', () => {
   });
 
   it('reset clears all state', () => {
-    useHistoryStore.setState({ rides: [{ id: 'test' } as any], status: 'loaded', total: 1 });
+    useHistoryStore.setState({ rides: [{ id: 'test' } as RideDto], status: 'loaded', total: 1 });
     useHistoryStore.getState().reset();
     const state = useHistoryStore.getState();
     expect(state.rides).toEqual([]);

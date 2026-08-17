@@ -10,7 +10,11 @@ import { DEFAULT_CENTER } from '../utils/map';
 /**
  * MapInner: small helper to invalidate map size when expanded changes
  */
-const MapInner: React.FC<{ center: [number, number]; zoom: number; expanded: boolean }> = ({ center, zoom, expanded }) => {
+const MapInner: React.FC<{ center: [number, number]; zoom: number; expanded: boolean }> = ({
+  center,
+  zoom,
+  expanded,
+}) => {
   const map = useMap();
 
   useEffect(() => {
@@ -53,12 +57,17 @@ const MinimapOverlay: React.FC = () => {
   // Determine size from profile.minimap.scale; force small in camera mode
   const { sizeClass, expandedClass, mapZoom, maxPoints } = useMemo(() => {
     const scale = isCameraMode ? 'small' : profile.minimap.scale;
-    if (scale === 'large') return { sizeClass: 'w-44 h-32', expandedClass: 'w-80 h-64', mapZoom: 14, maxPoints: 90 };
-    if (scale === 'medium') return { sizeClass: 'w-36 h-28', expandedClass: 'w-72 h-56', mapZoom: 14, maxPoints: 70 };
+    if (scale === 'large')
+      return { sizeClass: 'w-44 h-32', expandedClass: 'w-80 h-64', mapZoom: 14, maxPoints: 90 };
+    if (scale === 'medium')
+      return { sizeClass: 'w-36 h-28', expandedClass: 'w-72 h-56', mapZoom: 14, maxPoints: 70 };
     return { sizeClass: 'w-28 h-20', expandedClass: 'w-64 h-48', mapZoom: 13, maxPoints: 50 };
   }, [profile.minimap.scale, isCameraMode]);
 
-  const polyline = useMemo(() => routePointsToLatLngs(sampleRoutePoints(route, maxPoints)), [route, maxPoints]);
+  const polyline = useMemo(
+    () => routePointsToLatLngs(sampleRoutePoints(route, maxPoints)),
+    [route, maxPoints],
+  );
 
   const center: [number, number] = latest ? [latest.latitude, latest.longitude] : DEFAULT_CENTER;
 
@@ -80,7 +89,7 @@ const MinimapOverlay: React.FC = () => {
   })();
 
   // Auto-collapse after timeout when expanded (placeholder behavior)
-  const autoCollapseTimeoutRef = useRef<number | null>(null as any);
+  const autoCollapseTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (expanded) {
@@ -103,10 +112,13 @@ const MinimapOverlay: React.FC = () => {
   }, [expanded, setExpanded]);
 
   // Handle tap to expand/collapse; ensure quick toggle and minimal re-renders
-  const handleToggle = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    toggleExpanded();
-  }, [toggleExpanded]);
+  const handleToggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleExpanded();
+    },
+    [toggleExpanded],
+  );
 
   return (
     <div
@@ -116,7 +128,9 @@ const MinimapOverlay: React.FC = () => {
       role="button"
       aria-label={expanded ? 'Collapse minimap' : 'Expand minimap'}
     >
-      <div className={`w-full h-full rounded-lg overflow-hidden ${isCameraMode ? 'bg-black/20' : 'bg-black/30'} backdrop-blur border border-white/10 shadow-lg ${expanded ? 'ring-2 ring-cyan-400/30' : ''}`}>
+      <div
+        className={`w-full h-full rounded-lg overflow-hidden ${isCameraMode ? 'bg-black/20' : 'bg-black/30'} backdrop-blur border border-white/10 shadow-lg ${expanded ? 'ring-2 ring-cyan-400/30' : ''}`}
+      >
         <div className="relative w-full h-full">
           <MapContainer
             center={center}
@@ -130,16 +144,21 @@ const MinimapOverlay: React.FC = () => {
           >
             <MapInner center={center} zoom={mapZoom} expanded={expanded} />
 
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
             {polyline.length > 0 && (
-              <Polyline positions={polyline} pathOptions={{ color: '#60a5fa', weight: 2, opacity: 0.9 }} />
+              <Polyline
+                positions={polyline}
+                pathOptions={{ color: '#60a5fa', weight: 2, opacity: 0.9 }}
+              />
             )}
 
             {latest && (
-              <CircleMarker center={[latest.latitude, latest.longitude]} radius={expanded ? 6 : 4} pathOptions={{ color: '#f472b6', fillColor: '#f472b6' }} />
+              <CircleMarker
+                center={[latest.latitude, latest.longitude]}
+                radius={expanded ? 6 : 4}
+                pathOptions={{ color: '#f472b6', fillColor: '#f472b6' }}
+              />
             )}
           </MapContainer>
 
@@ -153,7 +172,10 @@ const MinimapOverlay: React.FC = () => {
           {expanded && (
             <div className="absolute right-2 top-2 flex items-center gap-2">
               <button
-                onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded(false);
+                }}
                 className="bg-black/50 text-white px-2 py-1 rounded text-xs"
                 aria-label="Close minimap"
               >

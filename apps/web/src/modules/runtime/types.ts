@@ -50,7 +50,7 @@ export enum RuntimeMode {
   CAMERA_RECORD = 'CAMERA_RECORD',
   MAP_FOCUS = 'MAP_FOCUS',
   LOW_BATTERY = 'LOW_BATTERY',
-  FUTURE_AR_MODE = 'FUTURE_AR_MODE'
+  FUTURE_AR_MODE = 'FUTURE_AR_MODE',
 }
 
 /**
@@ -132,35 +132,35 @@ export const RENDERING_PROFILES: Record<RuntimeMode, RenderingProfile> = {
     map: {
       visible: true,
       scale: 'fullscreen',
-      zIndex: 0
+      zIndex: 0,
     },
     camera: {
       visible: false,
       scale: 'minimal',
-      zIndex: -1
+      zIndex: -1,
     },
     minimap: {
       visible: false,
       scale: 'small',
       position: 'bottom-right',
-      zIndex: 50
+      zIndex: 50,
     },
     hud: {
       visible: true,
       density: 'normal',
       opacity: 0.9,
       scale: 1.0,
-      compact: false
+      compact: false,
     },
     recording: {
       visible: true,
-      prominence: 'normal'
+      prominence: 'normal',
     },
     performance: {
       gpsFrequency: 1,
       routeSampling: 500,
-      hudUpdateBatching: true
-    }
+      hudUpdateBatching: true,
+    },
   },
 
   [RuntimeMode.CAMERA_RECORD]: {
@@ -168,36 +168,36 @@ export const RENDERING_PROFILES: Record<RuntimeMode, RenderingProfile> = {
     map: {
       visible: false,
       scale: 'minimal',
-      zIndex: 10 // Behind camera
+      zIndex: 10, // Behind camera
     },
     camera: {
       visible: true,
       scale: 'fullscreen',
-      zIndex: 0 // Primary layer
+      zIndex: 0, // Primary layer
     },
     minimap: {
       visible: true,
       scale: 'small',
       position: 'bottom-right',
-      zIndex: 100 // On top of camera
+      zIndex: 100, // On top of camera
     },
     hud: {
       visible: true,
       density: 'minimal',
       opacity: 0.8,
       scale: 0.9,
-      compact: true
+      compact: true,
     },
     recording: {
       visible: true,
-      prominence: 'prominent' // Very visible when recording
+      prominence: 'prominent', // Very visible when recording
     },
     performance: {
       gpsFrequency: 1,
       routeSampling: 300, // More aggressive sampling with camera
       hudUpdateBatching: true,
-      cameraFps: 30 // Reasonable frame rate
-    }
+      cameraFps: 30, // Reasonable frame rate
+    },
   },
 
   [RuntimeMode.MAP_FOCUS]: {
@@ -205,35 +205,35 @@ export const RENDERING_PROFILES: Record<RuntimeMode, RenderingProfile> = {
     map: {
       visible: true,
       scale: 'large',
-      zIndex: 0
+      zIndex: 0,
     },
     camera: {
       visible: false,
       scale: 'minimal',
-      zIndex: -1
+      zIndex: -1,
     },
     minimap: {
       visible: false,
       scale: 'small',
       position: 'top-right',
-      zIndex: 50
+      zIndex: 50,
     },
     hud: {
       visible: true,
       density: 'minimal',
       opacity: 0.85,
       scale: 0.9,
-      compact: true
+      compact: true,
     },
     recording: {
       visible: true,
-      prominence: 'subtle'
+      prominence: 'subtle',
     },
     performance: {
       gpsFrequency: 1,
       routeSampling: 500,
-      hudUpdateBatching: true
-    }
+      hudUpdateBatching: true,
+    },
   },
 
   [RuntimeMode.LOW_BATTERY]: {
@@ -241,36 +241,36 @@ export const RENDERING_PROFILES: Record<RuntimeMode, RenderingProfile> = {
     map: {
       visible: true,
       scale: 'large',
-      zIndex: 0
+      zIndex: 0,
     },
     camera: {
       visible: false,
       scale: 'minimal',
-      zIndex: -1
+      zIndex: -1,
     },
     minimap: {
       visible: false,
       scale: 'small',
       position: 'bottom-right',
-      zIndex: 50
+      zIndex: 50,
     },
     hud: {
       visible: true,
       density: 'minimal',
       opacity: 0.8,
       scale: 0.85,
-      compact: true
+      compact: true,
     },
     recording: {
       visible: true,
-      prominence: 'subtle'
+      prominence: 'subtle',
     },
     performance: {
       gpsFrequency: 1, // Could be reduced to 0.5 (every 2s) in future
       routeSampling: 300, // Aggressive sampling to save memory
-      hudUpdateBatching: true
+      hudUpdateBatching: true,
       // Note: Future optimization - disable expensive effects
-    }
+    },
   },
 
   [RuntimeMode.FUTURE_AR_MODE]: {
@@ -278,37 +278,37 @@ export const RENDERING_PROFILES: Record<RuntimeMode, RenderingProfile> = {
     map: {
       visible: false,
       scale: 'minimal',
-      zIndex: 10
+      zIndex: 10,
     },
     camera: {
       visible: true,
       scale: 'fullscreen',
-      zIndex: 0
+      zIndex: 0,
     },
     minimap: {
       visible: true,
       scale: 'small',
       position: 'top-right',
-      zIndex: 100
+      zIndex: 100,
     },
     hud: {
       visible: true,
       density: 'minimal',
       opacity: 1.0,
       scale: 0.9,
-      compact: true
+      compact: true,
     },
     recording: {
       visible: true,
-      prominence: 'normal'
+      prominence: 'normal',
     },
     performance: {
       gpsFrequency: 2, // Higher frequency for AR navigation
       routeSampling: 500,
       hudUpdateBatching: false, // Real-time updates for AR
-      cameraFps: 60 // High FPS for smooth AR rendering
-    }
-  }
+      cameraFps: 60, // High FPS for smooth AR rendering
+    },
+  },
 };
 
 /**
@@ -345,7 +345,7 @@ export const MODE_CAPABILITIES: Record<RuntimeMode, ModeCapabilities> = {
     supportsAR: false,
     supportsNavigation: true,
     supportsLiveMetrics: true,
-    estimatedBatteryDrain: 'low'
+    estimatedBatteryDrain: 'low',
   },
 
   [RuntimeMode.CAMERA_RECORD]: {
@@ -358,7 +358,7 @@ export const MODE_CAPABILITIES: Record<RuntimeMode, ModeCapabilities> = {
     supportsAR: false,
     supportsNavigation: true,
     supportsLiveMetrics: true,
-    estimatedBatteryDrain: 'high'
+    estimatedBatteryDrain: 'high',
   },
 
   [RuntimeMode.MAP_FOCUS]: {
@@ -371,7 +371,7 @@ export const MODE_CAPABILITIES: Record<RuntimeMode, ModeCapabilities> = {
     supportsAR: false,
     supportsNavigation: true,
     supportsLiveMetrics: true,
-    estimatedBatteryDrain: 'low'
+    estimatedBatteryDrain: 'low',
   },
 
   [RuntimeMode.LOW_BATTERY]: {
@@ -384,7 +384,7 @@ export const MODE_CAPABILITIES: Record<RuntimeMode, ModeCapabilities> = {
     supportsAR: false,
     supportsNavigation: true,
     supportsLiveMetrics: true,
-    estimatedBatteryDrain: 'low'
+    estimatedBatteryDrain: 'low',
   },
 
   [RuntimeMode.FUTURE_AR_MODE]: {
@@ -397,8 +397,8 @@ export const MODE_CAPABILITIES: Record<RuntimeMode, ModeCapabilities> = {
     supportsAR: true,
     supportsNavigation: true,
     supportsLiveMetrics: true,
-    estimatedBatteryDrain: 'high'
-  }
+    estimatedBatteryDrain: 'high',
+  },
 };
 
 /**
@@ -454,7 +454,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
     displayDpi: 400,
     displayRefreshRate: 60,
     isThermalThrottling: false,
-    networkQuality: 'good'
+    networkQuality: 'good',
   };
 }
 
@@ -498,33 +498,33 @@ export const MODE_TRANSITION_RULES: ModeTransitionRule[] = [
     fromMode: RuntimeMode.GPS_ONLY,
     toMode: RuntimeMode.LOW_BATTERY,
     condition: (state) => state.batteryPercent < 15 && state.adaptToLowBattery,
-    label: 'GPS_ONLY → LOW_BATTERY (battery < 15%)'
+    label: 'GPS_ONLY → LOW_BATTERY (battery < 15%)',
   },
   {
     fromMode: RuntimeMode.MAP_FOCUS,
     toMode: RuntimeMode.LOW_BATTERY,
     condition: (state) => state.batteryPercent < 15 && state.adaptToLowBattery,
-    label: 'MAP_FOCUS → LOW_BATTERY (battery < 15%)'
+    label: 'MAP_FOCUS → LOW_BATTERY (battery < 15%)',
   },
   {
     fromMode: RuntimeMode.LOW_BATTERY,
     toMode: RuntimeMode.GPS_ONLY,
     condition: (state) => state.batteryPercent > 25,
-    label: 'LOW_BATTERY → GPS_ONLY (battery > 25%)'
+    label: 'LOW_BATTERY → GPS_ONLY (battery > 25%)',
   },
   {
     fromMode: RuntimeMode.CAMERA_RECORD,
     toMode: RuntimeMode.LOW_BATTERY,
     condition: (state) => state.batteryPercent < 10,
-    label: 'CAMERA_RECORD → LOW_BATTERY (critical battery)'
+    label: 'CAMERA_RECORD → LOW_BATTERY (critical battery)',
   },
   // Future: AR mode transitions when AR capability detected
   {
     fromMode: RuntimeMode.GPS_ONLY,
     toMode: RuntimeMode.FUTURE_AR_MODE,
     condition: () => false, // Disabled until AR implementation
-    label: 'GPS_ONLY → FUTURE_AR_MODE (AR ready)'
-  }
+    label: 'GPS_ONLY → FUTURE_AR_MODE (AR ready)',
+  },
 ];
 
 /**
@@ -555,9 +555,9 @@ export function isValidModeTransition(fromMode: RuntimeMode, toMode: RuntimeMode
  */
 export function findApplicableTransitions(
   fromMode: RuntimeMode,
-  state: RuntimeState
+  state: RuntimeState,
 ): ModeTransitionRule[] {
   return MODE_TRANSITION_RULES.filter(
-    (rule) => rule.fromMode === fromMode && rule.condition(state)
+    (rule) => rule.fromMode === fromMode && rule.condition(state),
   );
 }

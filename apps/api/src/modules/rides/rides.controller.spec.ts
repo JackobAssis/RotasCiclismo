@@ -6,7 +6,16 @@ import { JwtAuthGuard } from '../../common/auth.guard';
 
 describe('RidesController', () => {
   let controller: RidesController;
-  let mockPrisma: any;
+  let mockPrisma: {
+    ride: {
+      findUnique: jest.Mock;
+      findMany: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+      count: jest.Mock;
+    };
+  };
 
   const mockRide: RideResponseDto = {
     id: 'ride-1',
@@ -49,10 +58,7 @@ describe('RidesController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RidesController],
-      providers: [
-        RidesService,
-        { provide: PrismaClient, useValue: mockPrisma },
-      ],
+      providers: [RidesService, { provide: PrismaClient, useValue: mockPrisma }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: jest.fn(() => true) })

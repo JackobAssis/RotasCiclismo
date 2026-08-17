@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../stores/settings.store';
-import { useRuntimeStore } from '../stores/runtime.store';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Section } from '../components/ui/Section';
 import { Tabs } from '../components/ui/Tabs';
-import { Badge } from '../components/ui/Badge';
 import { storageService } from '../services/storage.service';
 import { eventBus } from '../lib/eventBus';
+import type { SyncTask } from '../../../../packages/types/src/index';
 
 type SettingsTab = 'sync' | 'gps' | 'camera' | 'accessibility';
 
@@ -25,11 +24,7 @@ export default function Settings() {
     <div className="space-y-6">
       <PageHeader title="Configurações" subtitle="Preferências do aplicativo" />
 
-      <Tabs
-        tabs={tabs}
-        activeTab={activeTab}
-        onChange={(id) => setActiveTab(id as SettingsTab)}
-      />
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={(id) => setActiveTab(id as SettingsTab)} />
 
       {activeTab === 'sync' && <SyncSettings />}
       {activeTab === 'gps' && <GPSSettings />}
@@ -74,7 +69,7 @@ function SyncSettings() {
 }
 
 function SyncStatusPanel() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<SyncTask[]>([]);
 
   const loadTasks = useCallback(async () => {
     const all = await storageService.getAllSyncTasks();
@@ -107,8 +102,7 @@ function SyncStatusPanel() {
   const lastSync = tasks
     .filter((t) => t.status === 'completed')
     .sort(
-      (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      (a, b) => new Date(b.updatedAt ?? '').getTime() - new Date(a.updatedAt ?? '').getTime(),
     )[0]?.updatedAt;
 
   return (
@@ -135,8 +129,7 @@ function SyncStatusPanel() {
 
         {lastSync && (
           <p className="text-xs text-gray-500">
-            Última sincronização:{' '}
-            {new Date(lastSync).toLocaleString('pt-BR')}
+            Última sincronização: {new Date(lastSync).toLocaleString('pt-BR')}
           </p>
         )}
 

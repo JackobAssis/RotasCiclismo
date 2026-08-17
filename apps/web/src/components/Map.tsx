@@ -55,16 +55,16 @@ export const Map: React.FC<MapProps> = ({ enableCameraFollow = false }) => {
   // Memoize marker icon to avoid recreating on each render
   const markerIcon = useMemo(
     () => createPositionMarker(latestPosition?.heading),
-    [latestPosition?.heading]
+    [latestPosition?.heading],
   );
 
   // Pan-to-follow behavior only (marker position is declarative via JSX)
   useEffect(() => {
     if (!mapRef.current || !latestPosition || !enableCameraFollow) return;
-    mapRef.current.panTo(
-      [latestPosition.latitude, latestPosition.longitude],
-      { animate: false, duration: 0 }
-    );
+    mapRef.current.panTo([latestPosition.latitude, latestPosition.longitude], {
+      animate: false,
+      duration: 0,
+    });
   }, [latestPosition, enableCameraFollow]);
 
   // Fit bounds once when route points become available
@@ -74,14 +74,14 @@ export const Map: React.FC<MapProps> = ({ enableCameraFollow = false }) => {
     fittedRef.current = true;
     mapRef.current.fitBounds(polylineLatLngs as [[number, number], [number, number]], {
       padding: [50, 50],
-      animate: false
+      animate: false,
     });
   }, [polylineLatLngs]);
 
   // Initial center (computed once)
   const initialCenter = useMemo(
-    () => polylineLatLngs.length >= 2 ? polylineLatLngs[0] : DEFAULT_CENTER,
-    []
+    () => (polylineLatLngs.length >= 2 ? polylineLatLngs[0] : DEFAULT_CENTER),
+    [],
   );
 
   return (
@@ -93,14 +93,14 @@ export const Map: React.FC<MapProps> = ({ enableCameraFollow = false }) => {
           </div>
         </div>
       ) : (
-          <MapContainer
-            center={initialCenter}
-            zoom={DEFAULT_ZOOM}
-            style={{ width: '100%', height: '100%' }}
-            ref={mapRef}
-            zoomControl={true}
-            attributionControl={true}
-          >
+        <MapContainer
+          center={initialCenter}
+          zoom={DEFAULT_ZOOM}
+          style={{ width: '100%', height: '100%' }}
+          ref={mapRef}
+          zoomControl={true}
+          attributionControl={true}
+        >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

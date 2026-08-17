@@ -52,7 +52,13 @@ describe('AuthStore', () => {
   it('setUnauthenticated clears auth state', () => {
     // First login
     useAuthStore.getState().setAuthenticated(
-      { id: '1', email: 'a@b.com', username: 'u', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      {
+        id: '1',
+        email: 'a@b.com',
+        username: 'u',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
       { accessToken: 'at', refreshToken: 'rt' },
     );
 
@@ -69,7 +75,13 @@ describe('AuthStore', () => {
 
   it('logout clears auth state', () => {
     useAuthStore.getState().setAuthenticated(
-      { id: '1', email: 'a@b.com', username: 'u', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      {
+        id: '1',
+        email: 'a@b.com',
+        username: 'u',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
       { accessToken: 'at', refreshToken: 'rt' },
     );
 
@@ -89,7 +101,13 @@ describe('AuthStore', () => {
   });
 
   it('completeHydration with data sets authenticated', () => {
-    const mockUser = { id: '1', email: 'a@b.com', username: 'u', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' };
+    const mockUser = {
+      id: '1',
+      email: 'a@b.com',
+      username: 'u',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
     const mockTokens = { accessToken: 'at', refreshToken: 'rt' };
 
     useAuthStore.getState().completeHydration(mockUser, mockTokens);
@@ -117,7 +135,13 @@ describe('AuthStore', () => {
   it('selectIsAuthenticated returns correct value', () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
     useAuthStore.getState().setAuthenticated(
-      { id: '1', email: 'a@b.com', username: 'u', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      {
+        id: '1',
+        email: 'a@b.com',
+        username: 'u',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
       { accessToken: 'at', refreshToken: 'rt' },
     );
     expect(useAuthStore.getState().isAuthenticated).toBe(true);

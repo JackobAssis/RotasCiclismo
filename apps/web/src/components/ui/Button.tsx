@@ -18,8 +18,7 @@ const variantStyles: Record<Variant, string> = {
     'bg-dark-800 text-neon-400 border border-neon-900/40 hover:bg-dark-850 hover:border-neon-700/50 active:bg-dark-900 disabled:opacity-40',
   ghost:
     'text-gray-400 hover:text-neon-400 hover:bg-dark-800 active:bg-dark-850 disabled:opacity-40',
-  danger:
-    'bg-red-600 text-white hover:bg-red-500 active:bg-red-700 disabled:opacity-40',
+  danger: 'bg-red-600 text-white hover:bg-red-500 active:bg-red-700 disabled:opacity-40',
 };
 
 const sizeStyles: Record<Size, string> = {
@@ -41,7 +40,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <button
@@ -59,7 +58,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {!isLoading && rightIcon && <span className="w-4 h-4">{rightIcon}</span>}
       </button>
     );
-  }
+  },
 );
 
 Button.displayName = 'Button';

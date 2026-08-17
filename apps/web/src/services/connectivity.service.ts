@@ -1,12 +1,12 @@
 /**
  * Connectivity Service: Online/offline detection and monitoring
- * 
+ *
  * Tracks:
  * - Online/offline status
  * - Connection quality
  * - Backend health
  * - Sync state
- * 
+ *
  * Usage: Subscribe to connectivity changes for UI feedback
  */
 
@@ -25,7 +25,7 @@ export type ConnectivityListener = (state: ConnectivityState) => void;
 
 /**
  * Connectivity Service
- * 
+ *
  * Monitors connection status and provides real-time updates
  */
 export class ConnectivityService {
@@ -39,7 +39,7 @@ export class ConnectivityService {
 
   constructor(
     private healthCheckUrl: string = '/api/health',
-    private healthCheckIntervalMs: number = 30000 // Check every 30 seconds
+    private healthCheckIntervalMs: number = 30000, // Check every 30 seconds
   ) {
     this.initialize();
   }
@@ -74,7 +74,7 @@ export class ConnectivityService {
     // Then check periodically
     this.healthCheckInterval = window.setInterval(
       () => this.checkHealth(),
-      this.healthCheckIntervalMs
+      this.healthCheckIntervalMs,
     );
   }
 
@@ -207,7 +207,7 @@ export class ConnectivityService {
    */
   private notifyListeners(): void {
     const state = this.getState();
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(state);
       } catch (error) {
@@ -237,7 +237,11 @@ export class ConnectivityService {
 }
 
 function getHealthUrl(): string {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
     return 'https://cycling-api-production.up.railway.app/api/health';
   }
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
@@ -249,5 +253,5 @@ function getHealthUrl(): string {
 // Export singleton instance
 export const connectivityService = new ConnectivityService(
   getHealthUrl(),
-  30000 // Check every 30 seconds
+  30000, // Check every 30 seconds
 );

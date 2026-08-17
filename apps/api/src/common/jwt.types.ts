@@ -5,7 +5,7 @@
  */
 
 export interface JwtPayload {
-  sub: string;      // User ID (subject)
+  sub: string; // User ID (subject)
   email: string;
   username: string;
   iat: number;
@@ -17,4 +17,12 @@ export interface RefreshTokenPayload {
   type: 'refresh';
   iat: number;
   exp: number;
+}
+
+export interface AuthenticatedRequest {
+  user: {
+    userId: string;
+    email?: string;
+    username?: string;
+  };
 }

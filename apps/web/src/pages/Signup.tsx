@@ -33,29 +33,29 @@ export function SignupPage() {
       ? !formData.email
         ? 'Email é obrigatório'
         : !validateEmail(formData.email)
-        ? 'Email inválido'
-        : null
+          ? 'Email inválido'
+          : null
       : null,
     username: touched.username
       ? !formData.username
         ? 'Usuário é obrigatório'
         : !validateUsername(formData.username)
-        ? 'Usuário deve ter 3+ caracteres (letras, números, _, -)'
-        : null
+          ? 'Usuário deve ter 3+ caracteres (letras, números, _, -)'
+          : null
       : null,
     password: touched.password
       ? !formData.password
         ? 'Senha é obrigatória'
         : !validatePassword(formData.password)
-        ? 'Senha deve ter 8+ caracteres (letras + números)'
-        : null
+          ? 'Senha deve ter 8+ caracteres (letras + números)'
+          : null
       : null,
     confirmPassword: touched.confirmPassword
       ? !confirmPassword
         ? 'Confirme a senha'
         : confirmPassword !== formData.password
-        ? 'Senhas não conferem'
-        : null
+          ? 'Senhas não conferem'
+          : null
       : null,
   };
 
@@ -113,20 +113,13 @@ export function SignupPage() {
           <div className="w-14 h-14 rounded-2xl bg-neon-500/10 border border-neon-500/20 flex items-center justify-center text-neon-400 text-2xl font-bold mx-auto mb-4">
             R
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Criar conta
-          </h1>
-          <p className="text-sm text-gray-500">
-            Comece a registrar suas aventuras de ciclismo
-          </p>
+          <h1 className="text-2xl font-bold text-white mb-2">Criar conta</h1>
+          <p className="text-sm text-gray-500">Comece a registrar suas aventuras de ciclismo</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-400 mb-1"
-            >
+            <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
               Email
             </label>
             <input
@@ -145,16 +138,11 @@ export function SignupPage() {
               placeholder="seu@email.com"
               autoFocus
             />
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-400">{errors.email}</p>
-            )}
+            {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
           </div>
 
           <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-400 mb-1"
-            >
+            <label htmlFor="username" className="block text-sm font-medium text-gray-400 mb-1">
               Usuário
             </label>
             <input
@@ -172,18 +160,12 @@ export function SignupPage() {
               } text-white placeholder-gray-600 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-neon-500/20`}
               placeholder="seu_usuario"
             />
-            {errors.username && (
-              <p className="mt-1 text-xs text-red-400">{errors.username}</p>
-            )}
+            {errors.username && <p className="mt-1 text-xs text-red-400">{errors.username}</p>}
           </div>
 
           <div>
-            <label
-              htmlFor="displayName"
-              className="block text-sm font-medium text-gray-400 mb-1"
-            >
-              Nome de exibição{' '}
-              <span className="text-xs text-gray-600">(opcional)</span>
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-400 mb-1">
+              Nome de exibição <span className="text-xs text-gray-600">(opcional)</span>
             </label>
             <input
               id="displayName"
@@ -198,10 +180,7 @@ export function SignupPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-400 mb-1"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-1">
               Senha
             </label>
             <input
@@ -219,9 +198,7 @@ export function SignupPage() {
               } text-white placeholder-gray-600 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-neon-500/20`}
               placeholder="••••••••"
             />
-            {errors.password && (
-              <p className="mt-1 text-xs text-red-400">{errors.password}</p>
-            )}
+            {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password}</p>}
           </div>
 
           <div>
@@ -247,9 +224,7 @@ export function SignupPage() {
               placeholder="••••••••"
             />
             {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-400">
-                {errors.confirmPassword}
-              </p>
+              <p className="mt-1 text-xs text-red-400">{errors.confirmPassword}</p>
             )}
           </div>
 

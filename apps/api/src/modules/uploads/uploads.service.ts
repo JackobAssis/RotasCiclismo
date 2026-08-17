@@ -42,10 +42,14 @@ export class UploadsService {
    * Future: Return pre-signed S3 URL or Azure SAS token.
    */
   async getUploadUrl(
-    userId: string,
-    fileType: 'snapshot' | 'video',
-    fileSize: number,
+    _userId: string,
+    _fileType: 'snapshot' | 'video',
+    _fileSize: number,
   ): Promise<UploadUrlResponse> {
+    void _userId;
+    void _fileType;
+    void _fileSize;
+
     // In local mode: return endpoint to POST file to
     // In S3 mode: return pre-signed PUT URL
 

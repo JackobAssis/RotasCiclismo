@@ -19,14 +19,19 @@
 | **Arquitetura Base** | ✅ Planejada e Documentada | 100% |
 | **Stack Tecnológico** | ✅ Definido | 100% |
 | **Estrutura Monorepo** | ✅ Implementada | 100% |
-| **Frontend PWA** | 🟡 Em Desenvolvimento | ~60% |
-| **Backend API** | 🟡 Estrutura Básica | ~15% |
+| **Frontend PWA** | ✅ Funcional | ~90% |
+| **Backend API** | ✅ Implementado | ~90% |
 | **Integração GPS** | ✅ Funcional | 100% |
 | **Sistema de HUD** | ✅ Implementado | 100% |
 | **Mapa/Leaflet** | ✅ Integrado | 100% |
-| **Módulos Core** | 🟡 Em Progresso | ~50% |
-| **Autenticação** | ❌ Não Iniciado | 0% |
-| **Database** | ❌ Não Iniciado | 0% |
+| **Módulos Core** | ✅ Implementados | ~85% |
+| **Autenticação** | ✅ Implementada (backend + frontend) | 100% |
+| **Database (PostgreSQL + Prisma)** | ✅ Schema completo + migration | 100% |
+| **Sync Offline-First** | ✅ Fila + worker implementados | ~85% |
+| **Qualidade (lint + typecheck + tests)** | ✅ Verificado em 2026-08-17 | 100% |
+
+**Status verificado em:** 17 de agosto de 2026
+**Resultado da verificação:** `typecheck` ✅ · `lint` ✅ (0 problems) · API tests 42/42 ✅ · Web tests 69/69 ✅ · builds ✅
 
 ---
 
@@ -196,99 +201,131 @@ Implementados 5 widgets realtime:
 ### Fase 2: Módulos Core (Em Progresso)
 
 #### 1. **Módulo de Câmera**
-- 🟡 Estrutura base criada
-- ❌ Integração com HUD faltando
-- ❌ Gravação de vídeo não implementada
-- ❌ Snapshots não implementados
+- ✅ Estrutura base criada (CameraSurface, camera.store)
+- ✅ Componentes de estado (Active/Error/Idle/Loading)
+- 🟡 Gravação de vídeo não implementada
+- 🟡 Snapshots em disco não implementados (metadata sim)
 
-#### 2. **Módulo de Autenticação**
-- ❌ Login/Cadastro não iniciado
-- ❌ JWT não configurado
-- ❌ Perfil de usuário não definido
+#### 2. **Sync & Storage**
+- ✅ Worker de sync com retry + backoff
+- ✅ Fila IndexedDB (sessions, points, snapshots, sync tasks)
+- ✅ Payloads alinhados com a API (RIDE_CREATE, POINTS, FINISH, SNAPSHOT)
+- 🟡 Persistência de vídeo
+- 🟡 Upload real de arquivos (local/S3) — apenas metadata
 
 #### 3. **Backend API**
-- 🟡 Bootstrap NestJS funcional
-- ❌ Endpoints não criados
-- ❌ Database não configurado
-- ❌ Autenticação não implementada
+- ✅ Todos os módulos (auth, users, rides, route-points, snapshots, sync, uploads, health, analytics)
+- ✅ Testes de controller (42 passando)
+- 🟡 Endpoints de upload de arquivo físico pendentes
 
-#### 4. **Sincronização & Storage**
-- 🟡 Services básicos esboçados
-- ❌ Lógica de sync não implementada
-- ❌ Recuperação de erros parcial
-- ❌ localStorage estratégia incompleta
+#### 4. **Deploy**
+- 🟡 Backend Railway **fora do ar** (HTTP 404 em 2026-08-17) — precisa redeploy
+- ✅ Frontend Cloudflare Pages no ar (rotasciclismo.pages.dev)
+- 🟡 CI/CD pipeline não configurado
 
 ---
 
-## ❌ O QUE NÃO FOI INICIADO
+## ✅ O QUE FOI IMPLEMENTADO (FASE 1 E 2 ATUALIZADAS)
 
-### Fase 3: MVP (Não Iniciado)
+### 1. **Sistema de Mapas**
+- ✅ Leaflet + OpenStreetMap, polilinha em tempo real, marcador de posição
+- ✅ Otimização de performance (500 pontos max)
 
-- ❌ **Database** - Schema, migrations, conexão
-- ❌ **Autenticação Completa** - JWT, refresh tokens, permissões
-- ❌ **Histórico de Gravações** - Listar, filtrar, detalhes
-- ❌ **Sistema de Ranking** - Badges, pontos, competição
-- ❌ **Social/Comunidade** - Compartilhamento, comentários
-- ❌ **Analytics** - Dashboard de desempenho
-- ❌ **Notificações** - Push, alertas em tempo real
-- ❌ **Gravação de Vídeo** - Encoder, compressão, storage
-- ❌ **IA/ML** - Detecção de áreas perigosas, recomendações
+### 2. **Sistema HUD (Head-Up Display)**
+- ✅ 5 widgets realtime (Speed, Distance, Duration, GPS Status, Recording)
+- ✅ Registry de widgets extensível, z-index em camadas, mobile-first
+
+### 3. **Gerenciamento de Estado**
+- ✅ ride.store, gps.store, camera.store, minimap.store, runtime.store, auth.store, history.store, settings.store, analytics.store, profile.store
+- ✅ Cálculo Haversine, persistência de sessão
+
+### 4. **GPS & Localização**
+- ✅ useGPS(), useWatchPosition(), worker thread GPS, mock GPS para testes
+
+### 5. **Página de Gravação (Ride)**
+- ✅ Orquestração completa: iniciar → gravar → finalizar
+- ✅ Botões Start/Pause/Stop, mapa + HUD integrados
+
+### 6. **Autenticação Completa**
+- ✅ Backend: JWT + refresh tokens, bcrypt (10 rounds), Passport strategy
+- ✅ Frontend: auth.store (Zustand), auth.service, Login/Signup pages, ProtectedRoute/PublicRoute, AuthBootstrap, session restore, token refresh em 401
+
+### 7. **API Layer (Frontend)**
+- ✅ client.ts (fetch + retry + timeout), interceptors, tokenManager, connectivity service
+- ✅ api.service com 40+ operações tipadas
+
+### 8. **Sync Offline-First**
+- ✅ sync.service (polling, batch, backoff), sync.worker (upload real via API)
+- ✅ storage.service (IndexedDB: sessions, points, snapshots, fila de tasks)
+- ✅ Enfileiramento automático: ride:started → RIDE_CREATE, ride:finished → POINTS/FINISH/SNAPSHOT
+
+### 9. **Backend (NestJS + Prisma)**
+- ✅ 8 módulos: auth, users, rides, route-points, snapshots, sync, uploads, health + analytics
+- ✅ Schema Prisma completo (11 modelos) + migration inicial
+- ✅ DTOs validados (class-validator), exceções customizadas, guards JWT
+
+### 10. **Documentação Técnica**
+- ✅ docs/ (arquitetura, HUD, runtime flow, developer guide, módulos)
+- ✅ STEP1_API_LAYER.md, STEP2_AUTH_INTEGRATION.md, BACKEND_ARCHITECTURE.md, BACKEND_IMPLEMENTATION_SUMMARY.md
 
 ---
 
 ## 📈 MÉTRICAS DE PERFORMANCE
 
-(Conforme documentado)
-
 | Métrica | Valor | Status |
 |---------|-------|--------|
 | Amostragem de Rota | 500 pontos max | ✅ Otimizado |
-| Avaliação de Selector | O(1) por widget | ✅ Eficiente |
-| Tempo de Selector | ~0.4ms total | ✅ Rápido |
-| Frequência de Update GPS | 1Hz | ✅ Configurável |
 | Widgets Implementados | 5 core | ✅ Extensível |
-| Camadas Z-Index | 4 layers | ✅ Organizado |
 | Compatibilidade | Mobile 1º | ✅ Responsivo |
+| Testes API | 42 testes | ✅ Passando |
+| Testes Web | 69 testes | ✅ Passando |
+| Lint | 0 problems | ✅ Limpo |
+| Typecheck | 2/2 packages | ✅ Limpo |
 
 ---
 
 ## 🗺️ PRÓXIMOS PASSOS (Roadmap)
 
-### **Sprint 1: Backend Foundation**
-1. Implementar endpoints REST básicos
-2. Configurar database (PostgreSQL/MongoDB)
-3. Criar schema de usuários e rides
-4. Setup autenticação JWT
+### Sprint 1: Backend Foundation ✅ CONCLUÍDO
+1. ✅ Endpoints REST implementados
+2. ✅ Database configurada (PostgreSQL + Prisma, schema + migration)
+3. ✅ Schema de usuários e rides criado
+4. ✅ Autenticação JWT configurada
 
-### **Sprint 2: Auth & User**
-1. Implementar login/cadastro
-2. Validação de email
-3. Recuperação de senha
-4. Perfil de usuário
+### Sprint 2: Auth & User ✅ CONCLUÍDO
+1. ✅ Login/cadastro implementados (frontend + backend)
+2. 🟡 Validação de email (confirmar email ainda não)
+3. ❌ Recuperação de senha
+4. ✅ Perfil de usuário
 
-### **Sprint 3: Gravação & Camera**
-1. Integração câmera completa
-2. Stream de vídeo realtime
-3. Snapshots
-4. Storage em cloud
+### Sprint 3: Gravação & Camera
+1. 🟡 Integração câmera parcial (estrutura + componentes)
+2. ❌ Stream de vídeo realtime
+3. 🟡 Snapshots (metadata ok, arquivos não)
+4. ❌ Storage em cloud
 
-### **Sprint 4: Histórico & Analytics**
-1. Listar rides completos
-2. Detalhes de uma ride
-3. Dashboard de desempenho
-4. Exportar dados (GPX, CSV)
+### Sprint 4: Histórico & Analytics
+1. 🟡 Listar rides (UI + store existem, precisa backend no ar)
+2. 🟡 Detalhes de uma ride (página existe)
+3. 🟡 Dashboard de desempenho (Analytics page existe)
+4. ❌ Exportar dados (GPX, CSV)
 
-### **Sprint 5: Social & Community**
-1. Compartilhamento de rides
-2. Mapa de calor de rotas
-3. Comentários e reações
-4. Seguir outros ciclistas
+### Sprint 5: Social & Community
+1. ❌ Compartilhamento de rides
+2. ❌ Mapa de calor de rotas
+3. ❌ Comentários e reações
+4. ❌ Seguir outros ciclistas
 
-### **Sprint 6: Segurança**
-1. SOS integrado
-2. Rastreamento de emergência
-3. Detecção de áreas perigosas
-4. Histórico para segurança
+### Sprint 6: Segurança
+1. ❌ SOS integrado
+2. ❌ Rastreamento de emergência
+3. ❌ Detecção de áreas perigosas
+4. ❌ Histórico para segurança
+
+### Ação imediata 🚨
+1. **Redeploy do backend** — Railway retornou HTTP 404 em 17/08/2026
+2. CI/CD pipeline (GitHub Actions + Railway/Cloudflare)
+3. Configurar `.env` de produção e secrets
 
 ---
 
@@ -300,37 +337,41 @@ Implementados 5 widgets realtime:
 - **Performance Otimizada** - HUD altamente eficiente
 - **PWA Nativa** - Funciona offline, instalável
 - **Diferenciador Único** - GPS + Camera + HUD = proposta forte
+- **Backend Completo** - 8 módulos NestJS + Prisma, DTOs validados
+- **Qualidade Verde** - 111 testes passando, lint limpo, typecheck ok
 
 ### Pontos de Atenção ⚠️
-- **Backend Esqueleto** - Apenas bootstrap, sem endpoints reais
-- **Database Indefinido** - Precisa definir schema completo
-- **Autenticação Faltando** - MVP depende disso
-- **Gravação de Vídeo** - Não iniciado, é componente crítico
-- **Sincronização Offline** - Services esboçados, lógica incompleta
+- **Backend fora do ar** - Railway 404, MVP dependente disso
+- **Gravação de Vídeo** - Não iniciado, componente crítico
+- **Upload de arquivos** - Apenas metadata, sem storage físico
+- **Recuperação de senha** - Não implementada
 
 ### Dívida Técnica 📋
-- Integração câmera incompleta
-- Services de sync/recovery esboçados
-- Sem testes automatizados
+- Testes de serviço (só controllers testados)
+- Sem testes E2E/integração
 - Sem CI/CD pipeline
-- Sem documentação do backend
+- Logs/tracing centralizado ausente
+- Rate limiting configurado mas não validado em produção
 
 ---
 
 ## 🎓 CONCLUSÃO
 
-O **Cycling Routes** está em um estado **equilibrado de desenvolvimento**:
+O **Cycling Routes** está em um estado **avançado de desenvolvimento**:
 
 - ✅ A **visão de produto** é clara e diferenciada
-- ✅ A **arquitetura base** é sólida e bem documentada  
+- ✅ A **arquitetura base** é sólida e bem documentada
 - ✅ A **experiência visual** (mapa + HUD) está pronta
-- 🟡 O **backend** precisa de implementação urgente
-- 🟡 A **autenticação** é bloqueador para o MVP
-- ❌ A **gravação de vídeo** ainda é um incógnita técnica
+- ✅ O **backend completo** está implementado e testado
+- ✅ A **autenticação** está funcional (frontend + backend)
+- ✅ A **fila de sync offline-first** está implementada
+- 🟡 O **backend de produção** precisa ser religado (Railway 404)
+- ❌ A **gravação de vídeo** ainda é uma incógnita técnica
 
-**Recomendação:** Priorizar backend + auth nos próximos sprints para desbloquear MVP.
+**Recomendação:** Redeploy do backend + CI/CD para desbloquear o MVP end-to-end.
 
 ---
 
 **Data do Relatório:** 24 de maio de 2026
+**Última verificação:** 17 de agosto de 2026 (typecheck ✅ · lint ✅ · 111 testes ✅ · builds ✅)
 **Status da Próxima Revisão:** A ser atualizado a cada sprint

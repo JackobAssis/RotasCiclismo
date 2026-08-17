@@ -32,8 +32,18 @@ function formatWeekLabel(weekStart: string): string {
 function formatMonthLabel(month: string): string {
   const [y, m] = month.split('-');
   const months = [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+    'Jan',
+    'Fev',
+    'Mar',
+    'Abr',
+    'Mai',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Set',
+    'Out',
+    'Nov',
+    'Dez',
   ];
   return `${months[parseInt(m, 10) - 1]}/${y}`;
 }
@@ -90,7 +100,11 @@ export default function Analytics() {
         <EmptyState
           title="Erro ao carregar"
           description={error ?? 'Tente novamente mais tarde'}
-          action={<button onClick={() => fetch()} className="text-neon-400 text-sm underline">Tentar novamente</button>}
+          action={
+            <button onClick={() => fetch()} className="text-neon-400 text-sm underline">
+              Tentar novamente
+            </button>
+          }
         />
       </div>
     );
@@ -120,11 +134,7 @@ export default function Analytics() {
             value={`${data.totalDistance.toFixed(1)} km`}
             variant="neon"
           />
-          <StatCard
-            label="Tempo Total"
-            value={formatDuration(data.totalDuration)}
-            variant="neon"
-          />
+          <StatCard label="Tempo Total" value={formatDuration(data.totalDuration)} variant="neon" />
           <StatCard
             label="Velocidade Média"
             value={`${data.averageSpeed.toFixed(1)} km/h`}
@@ -166,13 +176,9 @@ export default function Analytics() {
                     borderRadius: '8px',
                     fontSize: '12px',
                   }}
-                  formatter={(value: any) => `${Number(value).toFixed(1)} km`}
+                  formatter={(value: unknown) => `${Number(value).toFixed(1)} km`}
                 />
-                <Bar
-                  dataKey="distance"
-                  fill={chartColors.neon}
-                  radius={[4, 4, 0, 0]}
-                />
+                <Bar dataKey="distance" fill={chartColors.neon} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -202,13 +208,9 @@ export default function Analytics() {
                     borderRadius: '8px',
                     fontSize: '12px',
                   }}
-                  formatter={(value: any) => `${Number(value).toFixed(1)} km`}
+                  formatter={(value: unknown) => `${Number(value).toFixed(1)} km`}
                 />
-                <Bar
-                  dataKey="distance"
-                  fill={chartColors.neon}
-                  radius={[4, 4, 0, 0]}
-                />
+                <Bar dataKey="distance" fill={chartColors.neon} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -238,7 +240,7 @@ export default function Analytics() {
                     borderRadius: '8px',
                     fontSize: '12px',
                   }}
-                  formatter={(value: any) => `${Number(value).toFixed(1)} km/h`}
+                  formatter={(value: unknown) => `${Number(value).toFixed(1)} km/h`}
                 />
                 <Line
                   type="monotone"

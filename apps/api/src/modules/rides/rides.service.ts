@@ -11,8 +11,8 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { PrismaClient, Prisma, Ride, RideStatus } from '@prisma/client';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateRideDto, UpdateRideDto, FinishRideDto } from '../../common/dtos';
 
 export class RideResponseDto {
@@ -96,10 +96,10 @@ export class RidesService {
       onlyPublic = false,
     }: { page?: number; limit?: number; status?: string; onlyPublic?: boolean },
   ) {
-    const where: any = { userId };
+    const where: Prisma.RideWhereInput = { userId };
 
     if (status) {
-      where.status = status;
+      where.status = status as RideStatus;
     }
 
     if (onlyPublic) {
@@ -253,7 +253,7 @@ export class RidesService {
   /**
    * Helper: Map Ride model to DTO
    */
-  private mapRideToDto(ride: any): RideResponseDto {
+  private mapRideToDto(ride: Ride): RideResponseDto {
     return {
       id: ride.id,
       userId: ride.userId,

@@ -6,8 +6,15 @@ import { JwtAuthGuard } from '../../common/auth.guard';
 
 describe('UsersController', () => {
   let controller: UsersController;
-  let usersService: UsersService;
-  let mockPrisma: any;
+  let mockPrisma: {
+    user: {
+      findUnique: jest.Mock;
+      update: jest.Mock;
+    };
+    ride: {
+      findMany: jest.Mock;
+    };
+  };
 
   const mockUser = {
     id: 'user-1',
@@ -32,17 +39,13 @@ describe('UsersController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [
-        UsersService,
-        { provide: PrismaClient, useValue: mockPrisma },
-      ],
+      providers: [UsersService, { provide: PrismaClient, useValue: mockPrisma }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: jest.fn(() => true) })
       .compile();
 
     controller = module.get<UsersController>(UsersController);
-    usersService = module.get<UsersService>(UsersService);
   });
 
   describe('GET /users/:id', () => {

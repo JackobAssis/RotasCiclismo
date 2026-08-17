@@ -1,11 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  MapContainer,
-  TileLayer,
-  Polyline,
-  useMap,
-} from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
 import {
   LineChart,
   Line,
@@ -52,7 +47,7 @@ function SpeedChart({ route }: { route: RoutePointDto[] }) {
             second: '2-digit',
           }),
         })),
-    [route]
+    [route],
   );
 
   if (data.length === 0) {
@@ -69,11 +64,7 @@ function SpeedChart({ route }: { route: RoutePointDto[] }) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
-            <XAxis
-              dataKey="index"
-              tick={false}
-              axisLine={{ stroke: '#1a1a1a' }}
-            />
+            <XAxis dataKey="index" tick={false} axisLine={{ stroke: '#1a1a1a' }} />
             <YAxis
               stroke="#4f4f4f"
               tick={{ fill: '#6d6d6d', fontSize: 11 }}
@@ -87,7 +78,7 @@ function SpeedChart({ route }: { route: RoutePointDto[] }) {
                 fontSize: 12,
               }}
               labelStyle={{ color: '#888' }}
-              formatter={(value: any) => [`${Number(value).toFixed(1)} km/h`, 'Velocidade']}
+              formatter={(value: unknown) => [`${Number(value).toFixed(1)} km/h`, 'Velocidade']}
             />
             <Line
               type="monotone"
@@ -117,7 +108,7 @@ function AltitudeChart({ route }: { route: RoutePointDto[] }) {
             second: '2-digit',
           }),
         })),
-    [route]
+    [route],
   );
 
   if (data.length === 0) {
@@ -134,11 +125,7 @@ function AltitudeChart({ route }: { route: RoutePointDto[] }) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
-            <XAxis
-              dataKey="index"
-              tick={false}
-              axisLine={{ stroke: '#1a1a1a' }}
-            />
+            <XAxis dataKey="index" tick={false} axisLine={{ stroke: '#1a1a1a' }} />
             <YAxis
               stroke="#4f4f4f"
               tick={{ fill: '#6d6d6d', fontSize: 11 }}
@@ -152,7 +139,7 @@ function AltitudeChart({ route }: { route: RoutePointDto[] }) {
                 fontSize: 12,
               }}
               labelStyle={{ color: '#888' }}
-              formatter={(value: any) => [`${Number(value).toFixed(0)}m`, 'Altitude']}
+              formatter={(value: unknown) => [`${Number(value).toFixed(0)}m`, 'Altitude']}
             />
             <Line
               type="monotone"
@@ -194,8 +181,7 @@ export default function RideDetails() {
         setRide(data);
         setLoadStatus('loaded');
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Falha ao carregar pedalada';
+        const message = err instanceof Error ? err.message : 'Falha ao carregar pedalada';
         setError(message);
         setLoadStatus('error');
       }
@@ -259,11 +245,7 @@ export default function RideDetails() {
         <Card variant="flat" padding="md">
           <div className="flex flex-col items-center gap-3 py-4 text-center">
             <p className="text-sm text-red-400">{error}</p>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => window.location.reload()}
-            >
+            <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
               Tentar novamente
             </Button>
           </div>
@@ -301,29 +283,17 @@ export default function RideDetails() {
         subtitle={`${formatDate(ride.startedAt)} às ${formatTime(ride.startedAt)}`}
         actions={
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMapFullscreen((v) => !v)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setMapFullscreen((v) => !v)}>
               {mapFullscreen ? 'Minimizar' : 'Expandir'}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/history')}
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate('/history')}>
               Voltar
             </Button>
           </div>
         }
       />
 
-      <Card
-        variant="neon"
-        padding="none"
-        className={`${mapHeight} overflow-hidden relative`}
-      >
+      <Card variant="neon" padding="none" className={`${mapHeight} overflow-hidden relative`}>
         {routePositions.length > 0 ? (
           <MapContainer
             center={center}
@@ -360,53 +330,29 @@ export default function RideDetails() {
             label="Distância"
             value={ride.distance ? `${ride.distance.toFixed(1)} km` : '-- km'}
           />
-          <StatCard
-            label="Duração"
-            value={ride.duration ? formatDuration(ride.duration) : '--'}
-          />
+          <StatCard label="Duração" value={ride.duration ? formatDuration(ride.duration) : '--'} />
           <StatCard
             label="Vel. Média"
-            value={
-              ride.averageSpeed
-                ? `${ride.averageSpeed.toFixed(1)} km/h`
-                : '-- km/h'
-            }
+            value={ride.averageSpeed ? `${ride.averageSpeed.toFixed(1)} km/h` : '-- km/h'}
           />
           <StatCard
             label="Vel. Máx"
-            value={
-              ride.maxSpeed ? `${ride.maxSpeed.toFixed(1)} km/h` : '-- km/h'
-            }
+            value={ride.maxSpeed ? `${ride.maxSpeed.toFixed(1)} km/h` : '-- km/h'}
           />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-          <StatCard
-            label="Elevação"
-            value={ride.elevationGain ? `${ride.elevationGain}m` : '--'}
-          />
-          <StatCard
-            label="Calorias"
-            value={ride.calories ? `${ride.calories}` : '--'}
-          />
-          <StatCard
-            label="Modo"
-            value={ride.mode === 'GPS_ONLY' ? 'GPS' : 'GPS + Câmera'}
-          />
+          <StatCard label="Elevação" value={ride.elevationGain ? `${ride.elevationGain}m` : '--'} />
+          <StatCard label="Calorias" value={ride.calories ? `${ride.calories}` : '--'} />
+          <StatCard label="Modo" value={ride.mode === 'GPS_ONLY' ? 'GPS' : 'GPS + Câmera'} />
           <StatCard label="Status" value={ride.status === 'FINISHED' ? 'Concluída' : ride.status} />
         </div>
       </Section>
 
       <Section title="Gráficos">
-        <Tabs
-          tabs={chartTabs}
-          activeTab={chartTab}
-          onChange={setChartTab}
-        />
+        <Tabs tabs={chartTabs} activeTab={chartTab} onChange={setChartTab} />
         <div className="mt-3">
           {chartTab === 'speed' && <SpeedChart route={ride.route ?? []} />}
-          {chartTab === 'altitude' && (
-            <AltitudeChart route={ride.route ?? []} />
-          )}
+          {chartTab === 'altitude' && <AltitudeChart route={ride.route ?? []} />}
         </div>
       </Section>
 
@@ -442,12 +388,7 @@ export default function RideDetails() {
         {ride.snapshots && ride.snapshots.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {ride.snapshots.map((snap) => (
-              <Card
-                key={snap.id}
-                variant="flat"
-                padding="none"
-                className="overflow-hidden"
-              >
+              <Card key={snap.id} variant="flat" padding="none" className="overflow-hidden">
                 <div className="aspect-video bg-dark-850 flex items-center justify-center">
                   {snap.thumbnailUrl || snap.imageUrl ? (
                     <img
@@ -464,9 +405,7 @@ export default function RideDetails() {
           </div>
         ) : (
           <Card variant="flat" padding="md" className="text-center py-8">
-            <p className="text-sm text-gray-600">
-              Nenhum snapshot registrado nesta pedalada.
-            </p>
+            <p className="text-sm text-gray-600">Nenhum snapshot registrado nesta pedalada.</p>
           </Card>
         )}
       </Section>

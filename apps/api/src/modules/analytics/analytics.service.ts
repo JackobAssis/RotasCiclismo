@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Ride } from '@prisma/client';
 
 export interface WeeklyData {
   weekStart: string;
@@ -56,9 +56,7 @@ export class AnalyticsService {
     const totalDuration = rides.reduce((s, r) => s + r.duration, 0);
     const maxSpeed = Math.max(...rides.map((r) => r.maxSpeed));
     const avgSpeed =
-      totalRides > 0
-        ? rides.reduce((s, r) => s + r.averageSpeed, 0) / totalRides
-        : 0;
+      totalRides > 0 ? rides.reduce((s, r) => s + r.averageSpeed, 0) / totalRides : 0;
     const averageDistance = totalDistance / totalRides;
 
     const weekly = this.groupByWeek(rides);
@@ -76,8 +74,11 @@ export class AnalyticsService {
     };
   }
 
-  private groupByWeek(rides: any[]): WeeklyData[] {
-    const groups = new Map<string, { distance: number; duration: number; rides: number; speeds: number[] }>();
+  private groupByWeek(rides: Ride[]): WeeklyData[] {
+    const groups = new Map<
+      string,
+      { distance: number; duration: number; rides: number; speeds: number[] }
+    >();
 
     for (const ride of rides) {
       const d = new Date(ride.startedAt);
@@ -99,16 +100,17 @@ export class AnalyticsService {
         rides: g.rides,
         averageSpeed:
           g.speeds.length > 0
-            ? Math.round(
-                (g.speeds.reduce((a, b) => a + b, 0) / g.speeds.length) * 100,
-              ) / 100
+            ? Math.round((g.speeds.reduce((a, b) => a + b, 0) / g.speeds.length) * 100) / 100
             : 0,
       }))
       .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
   }
 
-  private groupByMonth(rides: any[]): MonthlyData[] {
-    const groups = new Map<string, { distance: number; duration: number; rides: number; speeds: number[] }>();
+  private groupByMonth(rides: Ride[]): MonthlyData[] {
+    const groups = new Map<
+      string,
+      { distance: number; duration: number; rides: number; speeds: number[] }
+    >();
 
     for (const ride of rides) {
       const d = new Date(ride.startedAt);
@@ -129,9 +131,7 @@ export class AnalyticsService {
         rides: g.rides,
         averageSpeed:
           g.speeds.length > 0
-            ? Math.round(
-                (g.speeds.reduce((a, b) => a + b, 0) / g.speeds.length) * 100,
-              ) / 100
+            ? Math.round((g.speeds.reduce((a, b) => a + b, 0) / g.speeds.length) * 100) / 100
             : 0,
       }))
       .sort((a, b) => a.month.localeCompare(b.month));

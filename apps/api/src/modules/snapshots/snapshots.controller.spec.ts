@@ -7,7 +7,19 @@ import { JwtAuthGuard } from '../../common/auth.guard';
 describe('SnapshotsController', () => {
   let controller: SnapshotsController;
   let managementController: SnapshotsManagementController;
-  let mockPrisma: any;
+  let mockPrisma: {
+    ride: {
+      findUnique: jest.Mock;
+    };
+    snapshot: {
+      findUnique: jest.Mock;
+      findMany: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+      count: jest.Mock;
+    };
+  };
 
   const mockRide = {
     id: 'ride-1',
@@ -50,10 +62,7 @@ describe('SnapshotsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SnapshotsController, SnapshotsManagementController],
-      providers: [
-        SnapshotsService,
-        { provide: PrismaClient, useValue: mockPrisma },
-      ],
+      providers: [SnapshotsService, { provide: PrismaClient, useValue: mockPrisma }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: jest.fn(() => true) })
@@ -109,11 +118,10 @@ describe('SnapshotsController', () => {
       });
 
       const req = { user: { userId: 'user-1' } };
-      const result = await managementController.updateUploadStatus(
-        'snap-1',
-        req,
-        { status: 'COMPLETED', storageUrl: 'https://storage.example.com/photo.jpg' },
-      );
+      const result = await managementController.updateUploadStatus('snap-1', req, {
+        status: 'COMPLETED',
+        storageUrl: 'https://storage.example.com/photo.jpg',
+      });
 
       expect(result.uploadStatus).toBe('COMPLETED');
     });

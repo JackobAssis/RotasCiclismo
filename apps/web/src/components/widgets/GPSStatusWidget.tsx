@@ -20,11 +20,11 @@ const GPSStatusWidgetComponent: HudWidget = memo(({ label = 'GPS' }) => {
   const status = deriveGPSStatus(accuracy);
 
   const statusColors: Record<string, string> = {
-    'Searching': 'text-yellow-400 bg-yellow-500/10',
-    'Fair': 'text-orange-400 bg-orange-500/10',
-    'Good': 'text-blue-400 bg-blue-500/10',
-    'Excellent': 'text-green-400 bg-green-500/10',
-    'Connected': 'text-blue-400 bg-blue-500/10'
+    Searching: 'text-yellow-400 bg-yellow-500/10',
+    Fair: 'text-orange-400 bg-orange-500/10',
+    Good: 'text-blue-400 bg-blue-500/10',
+    Excellent: 'text-green-400 bg-green-500/10',
+    Connected: 'text-blue-400 bg-blue-500/10',
   };
 
   const colorClass = statusColors[status] || 'text-gray-400 bg-gray-500/10';
@@ -44,9 +44,18 @@ export const GPSStatusWidget = memo(() => {
   const overlay = useOverlay();
 
   useEffect(() => {
-    overlay.registerWidget('gps-status', {
-      id: 'gps-status', label: 'GPS', position: 'top-left', layer: 'base', visible: true, priority: 15
-    }, GPSStatusWidgetComponent);
+    overlay.registerWidget(
+      'gps-status',
+      {
+        id: 'gps-status',
+        label: 'GPS',
+        position: 'top-left',
+        layer: 'base',
+        visible: true,
+        priority: 15,
+      },
+      GPSStatusWidgetComponent,
+    );
     return () => overlay.unregisterWidget('gps-status');
   }, [overlay]);
 

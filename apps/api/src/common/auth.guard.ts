@@ -4,7 +4,7 @@
  * Protects endpoints that require authentication.
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, ExecutionContext } from '@nestjs/common';
 import { AuthGuard as NestAuthGuard } from '@nestjs/passport';
 
 @Injectable()
@@ -16,7 +16,14 @@ export class JwtAuthGuard extends NestAuthGuard('jwt') {}
  */
 @Injectable()
 export class OptionalJwtAuthGuard extends NestAuthGuard('jwt') {
-  handleRequest(err: any, user: any, info: any, context: any) {
+  handleRequest<TUser = unknown>(
+    err: unknown,
+    user: TUser,
+    _info: unknown,
+    _context: ExecutionContext,
+  ): TUser {
+    void _info;
+    void _context;
     return user || null;
   }
 }

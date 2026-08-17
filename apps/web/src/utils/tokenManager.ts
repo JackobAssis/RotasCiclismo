@@ -1,6 +1,6 @@
 /**
  * Token Manager: JWT token lifecycle management
- * 
+ *
  * Handles:
  * - Token storage (memory + localStorage)
  * - Token retrieval
@@ -28,7 +28,7 @@ const USER_ID_KEY = 'cycling_user_id';
 
 /**
  * Token Manager class
- * 
+ *
  * Manages all token operations in a single place
  */
 export class TokenManager {
@@ -141,7 +141,7 @@ export class TokenManager {
 
   /**
    * Decode JWT token (without verification)
-   * 
+   *
    * WARNING: Do NOT use this for security decisions!
    * Tokens are verified by backend.
    */
@@ -157,7 +157,7 @@ export class TokenManager {
         atob(base64)
           .split('')
           .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
+          .join(''),
       );
       const payload = JSON.parse(json);
 
@@ -224,7 +224,7 @@ export class TokenManager {
 
   /**
    * Refresh access token using refresh token
-   * 
+   *
    * Returns new token pair or null if refresh fails
    */
   async refresh(apiBaseUrl: string): Promise<TokenPair | null> {

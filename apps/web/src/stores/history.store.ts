@@ -32,8 +32,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     try {
       set({ status: 'loading', error: null });
 
-      const result: PaginatedResponseDto<RideDto> =
-        await apiService.listRides(page, 20);
+      const result: PaginatedResponseDto<RideDto> = await apiService.listRides(page, 20);
 
       set({
         rides: result.data ?? [],
@@ -47,8 +46,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
         storageService.cacheRides(result.data).catch(() => {});
       }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Falha ao carregar histórico';
+      const message = err instanceof Error ? err.message : 'Falha ao carregar histórico';
 
       const cached = await storageService.getCachedRides();
       if (cached.length > 0) {
@@ -79,8 +77,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     try {
       set({ status: 'loading' });
 
-      const result: PaginatedResponseDto<RideDto> =
-        await apiService.listRides(nextPage, 20);
+      const result: PaginatedResponseDto<RideDto> = await apiService.listRides(nextPage, 20);
 
       set((state) => ({
         rides: [...state.rides, ...(result.data ?? [])],
@@ -90,8 +87,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
         hasMore: result.hasMore ?? false,
       }));
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Falha ao carregar mais';
+      const message = err instanceof Error ? err.message : 'Falha ao carregar mais';
       set({ status: 'error', error: message });
     }
   },
@@ -108,7 +104,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   },
 }));
 
-eventBus.on('sync:task:finished', ({ rideId }: { taskId: number | string; rideId: string }) => {
+eventBus.on('sync:task:finished', () => {
   const state = useHistoryStore.getState();
   if (state.status === 'loaded') {
     state.fetchRides(1).catch(() => {});

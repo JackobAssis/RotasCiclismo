@@ -22,13 +22,13 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 
 export interface CreateSyncTaskDto {
   type: 'RIDE_CREATE' | 'RIDE_UPDATE' | 'RIDE_FINISH' | 'ROUTE_POINTS_UPLOAD' | 'SNAPSHOT_UPLOAD';
   rideId?: string;
-  payload?: any;
+  payload?: Prisma.InputJsonValue;
   priority?: number;
 }
 

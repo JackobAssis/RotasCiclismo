@@ -31,7 +31,7 @@ export const recoveryService = {
       // stream points incrementally to avoid blocking
       await storageService.streamPointsForRide(session.id, async (chunk) => {
         // append silently
-        useRideStore.getState().appendPointsSilent(chunk as any);
+        useRideStore.getState().appendPointsSilent(chunk);
         // yield to event loop to keep UI responsive
         await new Promise((r) => setTimeout(r, 0));
       });
@@ -39,7 +39,7 @@ export const recoveryService = {
       // restore snapshots
       const snaps = await storageService.getSnapshotsForRide(session.id);
       if (snaps && snaps.length > 0) {
-        useRideStore.getState().appendSnapshotsSilent(snaps as any);
+        useRideStore.getState().appendSnapshotsSilent(snaps);
       }
 
       // After hydration, UI can choose to resume tracking. We leave that decision to UI.
@@ -47,5 +47,5 @@ export const recoveryService = {
       // detection of corruption or other errors could be handled here
       // For now we fail quietly to avoid blocking app startup
     }
-  }
+  },
 };

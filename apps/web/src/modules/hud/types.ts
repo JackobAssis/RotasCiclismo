@@ -56,7 +56,7 @@ export type HudWidgetRegistry = {
   [key: string]: {
     config: HudWidgetConfig;
     component: HudWidget;
-    selector?: (state: any) => any; // Optional: for granular updates
+    selector?: (state: unknown) => unknown; // Optional: for granular updates
   };
 };
 
@@ -64,7 +64,12 @@ export type HudWidgetRegistry = {
  * Overlay manager context for widgets
  */
 export type HudOverlayContext = {
-  registerWidget: (key: string, config: HudWidgetConfig, widget: HudWidget, selector?: (state: any) => any) => void;
+  registerWidget: (
+    key: string,
+    config: HudWidgetConfig,
+    widget: HudWidget,
+    selector?: (state: unknown) => unknown,
+  ) => void;
   unregisterWidget: (key: string) => void;
   updateWidgetVisibility: (key: string, visible: boolean) => void;
   updateWidgetPosition: (key: string, position: WidgetPosition) => void;

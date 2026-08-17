@@ -26,8 +26,7 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
       const data = await apiService.getAnalytics();
       set({ data, status: 'loaded' });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Falha ao carregar analytics';
+      const message = err instanceof Error ? err.message : 'Falha ao carregar analytics';
       set({ status: 'error', error: message });
     }
   },

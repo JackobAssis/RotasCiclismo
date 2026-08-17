@@ -32,7 +32,12 @@ describe('Modal', () => {
 
   it('renders actions footer', () => {
     render(
-      <Modal open={true} onClose={vi.fn()} actions={<button>Confirm</button>} children={<p>Content</p>} />,
+      <Modal
+        open={true}
+        onClose={vi.fn()}
+        actions={<button>Confirm</button>}
+        children={<p>Content</p>}
+      />,
     );
     expect(screen.getByText('Confirm')).toBeInTheDocument();
   });

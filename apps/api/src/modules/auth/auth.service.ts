@@ -6,7 +6,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { SignUpDto, SignInDto, AuthResponseDto } from '../../common/dtos';
@@ -134,11 +134,11 @@ export class AuthService {
           sub: user.id,
           email: user.email,
           username: user.username,
-        } as any,
+        },
         {
           secret: this.config.jwt_secret,
-          expiresIn: this.config.jwt_expires_in,
-        } as any,
+          expiresIn: this.config.jwt_expires_in as JwtSignOptions['expiresIn'],
+        },
       );
 
       return { accessToken };
@@ -160,17 +160,17 @@ export class AuthService {
       iat: Date.now(),
     };
 
-    const accessToken = this.jwtService.sign(payload as any, {
+    const accessToken = this.jwtService.sign(payload, {
       secret: this.config.jwt_secret,
-      expiresIn: this.config.jwt_expires_in,
-    } as any);
+      expiresIn: this.config.jwt_expires_in as JwtSignOptions['expiresIn'],
+    });
 
     const refreshToken = this.jwtService.sign(
-      { sub: userId, type: 'refresh' } as any,
+      { sub: userId, type: 'refresh' },
       {
         secret: this.config.jwt_refresh_secret,
-        expiresIn: this.config.jwt_refresh_expires_in,
-      } as any,
+        expiresIn: this.config.jwt_refresh_expires_in as JwtSignOptions['expiresIn'],
+      },
     );
 
     return { accessToken, refreshToken };

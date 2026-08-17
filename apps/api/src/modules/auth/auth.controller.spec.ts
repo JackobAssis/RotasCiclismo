@@ -1,16 +1,23 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaClient } from '@prisma/client';
 import { JwtStrategy } from '../../common/jwt.strategy';
+import * as bcrypt from 'bcrypt';
 
 describe('AuthController', () => {
   let app: INestApplication;
   let controller: AuthController;
-  let authService: AuthService;
-  let mockPrisma: any;
+  let mockPrisma: {
+    user: {
+      findFirst: jest.Mock;
+      findUnique: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
+    };
+  };
 
   const mockUser = {
     id: 'user-1',
@@ -23,9 +30,9 @@ describe('AuthController', () => {
   };
 
   beforeAll(() => {
-    process.env.JWT_SECRET = 'test-secret';
+    process.env.JWT_SECRET = 'test-jwt-secret-0123456789abcdef0123456789abcdef';
     process.env.JWT_EXPIRES_IN = '7d';
-    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-0123456789abcdef0123456789abcdef';
     process.env.JWT_REFRESH_EXPIRES_IN = '30d';
   });
 
@@ -40,20 +47,13 @@ describe('AuthController', () => {
     };
 
     const moduleRef = await Test.createTestingModule({
-      imports: [
-        JwtModule.register({ secret: process.env.JWT_SECRET }),
-      ],
+      imports: [JwtModule.register({ secret: process.env.JWT_SECRET })],
       controllers: [AuthController],
-      providers: [
-        AuthService,
-        JwtStrategy,
-        { provide: PrismaClient, useValue: mockPrisma },
-      ],
+      providers: [AuthService, JwtStrategy, { provide: PrismaClient, useValue: mockPrisma }],
     }).compile();
 
     app = await moduleRef.createNestApplication().init();
     controller = moduleRef.get<AuthController>(AuthController);
-    authService = moduleRef.get<AuthService>(AuthService);
   });
 
   afterEach(async () => {
@@ -103,7 +103,6 @@ describe('AuthController', () => {
     };
 
     it('should return tokens for valid credentials', async () => {
-      const bcrypt = require('bcrypt');
       const hash = await bcrypt.hash('password123', 10);
 
       mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, passwordHash: hash });
@@ -119,22 +118,17 @@ describe('AuthController', () => {
     });
 
     it('should throw UnauthorizedException for wrong password', async () => {
-      const bcrypt = require('bcrypt');
       const hash = await bcrypt.hash('differentpassword', 10);
 
       mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, passwordHash: hash });
 
-      await expect(controller.signIn(signinDto)).rejects.toThrow(
-        'Invalid email or password',
-      );
+      await expect(controller.signIn(signinDto)).rejects.toThrow('Invalid email or password');
     });
 
     it('should throw UnauthorizedException for non-existent email', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(controller.signIn(signinDto)).rejects.toThrow(
-        'Invalid email or password',
-      );
+      await expect(controller.signIn(signinDto)).rejects.toThrow('Invalid email or password');
     });
   });
 

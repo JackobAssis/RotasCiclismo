@@ -4,7 +4,15 @@
  * Shared data transfer objects used across modules.
  */
 
-import { IsEmail, IsString, MinLength, IsOptional, IsNumber, IsArray, IsISO8601 } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  IsISO8601,
+} from 'class-validator';
 
 // ============================================================================
 // Auth DTOs

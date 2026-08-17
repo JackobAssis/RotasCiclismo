@@ -3,8 +3,16 @@ import { connectivityService, type ConnectivityStatus } from '../services/connec
 
 const statusConfig: Record<ConnectivityStatus, { label: string; dot: string; message: string }> = {
   online: { label: 'Conectado', dot: 'bg-neon-400', message: 'Sincronizando em tempo real' },
-  degraded: { label: 'Conexão instável', dot: 'bg-yellow-400', message: 'Algumas funções podem estar limitadas' },
-  offline: { label: 'Offline', dot: 'bg-red-400', message: 'Dados salvos localmente, sincronização automática quando reconectar' },
+  degraded: {
+    label: 'Conexão instável',
+    dot: 'bg-yellow-400',
+    message: 'Algumas funções podem estar limitadas',
+  },
+  offline: {
+    label: 'Offline',
+    dot: 'bg-red-400',
+    message: 'Dados salvos localmente, sincronização automática quando reconectar',
+  },
 };
 
 export function OfflineIndicator() {
@@ -28,7 +36,8 @@ export function OfflineIndicator() {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium backdrop-blur-md transition-all duration-300"
         style={{
-          backgroundColor: status === 'offline' ? 'rgba(220, 38, 38, 0.15)' : 'rgba(234, 179, 8, 0.12)',
+          backgroundColor:
+            status === 'offline' ? 'rgba(220, 38, 38, 0.15)' : 'rgba(234, 179, 8, 0.12)',
           color: status === 'offline' ? '#fca5a5' : '#fde047',
         }}
       >
@@ -54,9 +63,7 @@ export function OfflineIndicator() {
           }}
         >
           <div className="flex items-start gap-2 max-w-md mx-auto">
-            <span className="shrink-0 mt-0.5">
-              {status === 'offline' ? '📡' : '⚠️'}
-            </span>
+            <span className="shrink-0 mt-0.5">{status === 'offline' ? '📡' : '⚠️'}</span>
             <p>{config.message}</p>
           </div>
         </div>

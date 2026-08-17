@@ -14,11 +14,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   info: 'bg-blue-900/30 text-blue-400 border border-blue-800/40',
 };
 
-export function Badge({
-  children,
-  variant = 'default',
-  className = '',
-}: BadgeProps) {
+export function Badge({ children, variant = 'default', className = '' }: BadgeProps) {
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md ${variantStyles[variant]} ${className}`}

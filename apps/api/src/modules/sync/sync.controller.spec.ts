@@ -6,7 +6,16 @@ import { JwtAuthGuard } from '../../common/auth.guard';
 
 describe('SyncController', () => {
   let controller: SyncController;
-  let mockPrisma: any;
+  let mockPrisma: {
+    syncTask: {
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      findMany: jest.Mock;
+      update: jest.Mock;
+      deleteMany: jest.Mock;
+      count: jest.Mock;
+    };
+  };
 
   const mockTask = {
     id: 'task-1',
@@ -38,10 +47,7 @@ describe('SyncController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SyncController],
-      providers: [
-        SyncService,
-        { provide: PrismaClient, useValue: mockPrisma },
-      ],
+      providers: [SyncService, { provide: PrismaClient, useValue: mockPrisma }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: jest.fn(() => true) })

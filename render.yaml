@@ -8,11 +8,12 @@ services:
   - type: web
     name: cycling-api
     runtime: node
-    region: ohio
+    region: oregon
     plan: free
-    buildCommand: cd apps/api && pnpm install && pnpm run prisma:generate && pnpm run build
-    startCommand: cd apps/api && node dist/main.js
+    buildCommand: pnpm install && pnpm --filter @cycling/api run prisma:generate && pnpm --filter @cycling/api run build
+    startCommand: cd apps/api && npx prisma migrate deploy && node dist/main.js
     healthCheckPath: /api/health
+    autoDeploy: true
 
     envVars:
       - key: NODE_ENV
@@ -42,7 +43,7 @@ services:
         value: 30d
 
       - key: CORS_ORIGIN
-        value: https://cycling.app
+        value: https://rotasciclismo.pages.dev,http://localhost:5173
 
       - key: STORAGE_TYPE
         value: local
@@ -53,6 +54,6 @@ services:
 databases:
   - name: cycling-db
     plan: free
-    region: ohio
+    region: oregon
     databaseName: cycling_routes
     ipAllowList: []

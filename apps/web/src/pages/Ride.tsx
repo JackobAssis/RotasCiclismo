@@ -1,12 +1,19 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { useRideStore } from '../stores/ride.store';
-import { useRuntimeStore, useRenderingProfile, useHudDensity, useShouldShowMap, useModeCapabilities } from '../stores/runtime.store';
+import {
+  useRuntimeStore,
+  useRenderingProfile,
+  useHudDensity,
+  useShouldShowMap,
+  useModeCapabilities,
+} from '../stores/runtime.store';
 import { RuntimeMode } from '../modules/runtime/types';
 import OverlayManager from '../components/OverlayManager';
 import MinimapOverlay from '../components/MinimapOverlay';
 import useCameraStore from '../stores/camera.store';
 import useMinimapStore from '../stores/minimap.store';
 import { useWatchPosition } from '../hooks/useWatchPosition';
+import type { RoutePoint } from '../../../../packages/types/src/index';
 
 const Map = lazy(() => import('../components/Map'));
 const CameraSurface = lazy(() => import('../components/CameraSurface'));
@@ -16,9 +23,22 @@ import {
   DurationWidget,
   GPSStatusWidget,
   RecordingStatusWidget,
-  BatteryWidget
+  BatteryWidget,
 } from '../components/HudWidgets';
 import { Badge } from '../components/ui/Badge';
+
+interface BatteryManagerLike {
+  level: number;
+  charging: boolean;
+  addEventListener(type: string, listener: () => void): void;
+  removeEventListener(type: string, listener: () => void): void;
+}
+
+declare global {
+  interface Navigator {
+    getBattery?: () => Promise<BatteryManagerLike>;
+  }
+}
 
 interface RidePageProps {
   enableCameraFollow?: boolean;
@@ -32,7 +52,6 @@ const RuntimeModeControls: React.FC<{ showDebugPanel: boolean }> = ({ showDebugP
   const setMode = useRuntimeStore((s) => s.setMode);
   const profile = useRenderingProfile();
   const capabilities = useModeCapabilities();
-  const hudDensity = useHudDensity();
   const shouldShowMap = useShouldShowMap();
   const debugInfo = useRuntimeStore((s) => s.getDebugInfo());
   const minimapExpanded = useMinimapStore((s) => s.expanded);
@@ -44,9 +63,12 @@ const RuntimeModeControls: React.FC<{ showDebugPanel: boolean }> = ({ showDebugP
     { id: RuntimeMode.LOW_BATTERY, label: 'Econômico', description: 'Renderização mínima' },
   ];
 
-  const handleModeSelect = useCallback((mode: RuntimeMode) => {
-    setMode(mode);
-  }, [setMode]);
+  const handleModeSelect = useCallback(
+    (mode: RuntimeMode) => {
+      setMode(mode);
+    },
+    [setMode],
+  );
 
   const capabilityIndicators = useMemo(
     () => [
@@ -55,7 +77,7 @@ const RuntimeModeControls: React.FC<{ showDebugPanel: boolean }> = ({ showDebugP
       { label: 'MiniMapa', value: capabilities.hasMinimap, icon: '◈' },
       { label: 'Navegação', value: capabilities.supportsNavigation, icon: '▶' },
     ],
-    [capabilities]
+    [capabilities],
   );
 
   const profileViz = useMemo(
@@ -67,7 +89,7 @@ const RuntimeModeControls: React.FC<{ showDebugPanel: boolean }> = ({ showDebugP
       routeSampling: `${profile.performance.routeSampling} pts`,
       batteryDrain: capabilities.estimatedBatteryDrain,
     }),
-    [profile, capabilities]
+    [profile, capabilities],
   );
 
   return (
@@ -121,17 +143,41 @@ const RuntimeModeControls: React.FC<{ showDebugPanel: boolean }> = ({ showDebugP
           <DebugInfoRow label="Modo Ativo" value={currentMode} color="cyan" />
           <DebugInfoRow label="Escala Mapa" value={profileViz.mapScale} color="amber" />
           <DebugInfoRow label="Densidade HUD" value={profileViz.hudDensity} color="amber" />
-          <DebugInfoRow label="Opacidade HUD" value={`${(profileViz.hudOpacity * 100).toFixed(0)}%`} color="amber" />
+          <DebugInfoRow
+            label="Opacidade HUD"
+            value={`${(profileViz.hudOpacity * 100).toFixed(0)}%`}
+            color="amber"
+          />
           <DebugInfoRow label="Freq. GPS" value={profileViz.gpsFrequency} color="blue" />
           <DebugInfoRow label="Amostragem" value={profileViz.routeSampling} color="blue" />
-          <DebugInfoRow label="Dreno Bateria" value={profileViz.batteryDrain.toUpperCase()} color={
-            profileViz.batteryDrain === 'low' ? 'green' : profileViz.batteryDrain === 'high' ? 'red' : 'yellow'
-          } />
-          <DebugInfoRow label="Bateria" value={`${debugInfo.battery.toFixed(0)}%`} color={
-            debugInfo.battery > 50 ? 'green' : debugInfo.battery > 20 ? 'yellow' : 'red'
-          } />
+          <DebugInfoRow
+            label="Dreno Bateria"
+            value={profileViz.batteryDrain.toUpperCase()}
+            color={
+              profileViz.batteryDrain === 'low'
+                ? 'green'
+                : profileViz.batteryDrain === 'high'
+                  ? 'red'
+                  : 'yellow'
+            }
+          />
+          <DebugInfoRow
+            label="Bateria"
+            value={`${debugInfo.battery.toFixed(0)}%`}
+            color={debugInfo.battery > 50 ? 'green' : debugInfo.battery > 20 ? 'yellow' : 'red'}
+          />
           <DebugInfoRow label="Mapa Visível" value={shouldShowMap ? 'SIM' : 'NÃO'} color="purple" />
-          <DebugInfoRow label="MiniMapa" value={profile.minimap.visible ? (minimapExpanded ? 'Visível (Expandido)' : 'Visível') : 'Oculto'} color="purple" />
+          <DebugInfoRow
+            label="MiniMapa"
+            value={
+              profile.minimap.visible
+                ? minimapExpanded
+                  ? 'Visível (Expandido)'
+                  : 'Visível'
+                : 'Oculto'
+            }
+            color="purple"
+          />
         </div>
       )}
     </div>
@@ -156,7 +202,7 @@ function DebugInfoRow({ label, value, color }: { label: string; value: string; c
   );
 }
 
-function createMockGPSUpdates(callback: (position: any) => void, interval: number = 1000) {
+function createMockGPSUpdates(callback: (position: RoutePoint) => void, interval: number = 1000) {
   let pointCount = 0;
   const startLat = -23.5505;
   const startLon = -46.6333;
@@ -262,7 +308,6 @@ export const RidePage: React.FC<RidePageProps> = ({
   const shouldShowMap = useShouldShowMap();
   const modeCapabilities = useModeCapabilities();
   const currentMode = useRuntimeStore((s) => s.currentMode);
-  const cameraStream = useCameraStore((s) => s.stream);
   const cameraStatus = useCameraStore((s) => s.status);
   const requestPermissionAndStart = useCameraStore((s) => s.requestPermissionAndStart);
   const stopCameraStream = useCameraStore((s) => s.stopStream);
@@ -276,21 +321,15 @@ export const RidePage: React.FC<RidePageProps> = ({
   const shouldRenderBatteryWidget = hudDensity !== 'minimal';
 
   const mapContainerClasses = useMemo(
-    () =>
-      shouldShowMap
-        ? 'flex-1 relative overflow-hidden'
-        : 'w-0 h-0 overflow-hidden absolute',
-    [shouldShowMap]
+    () => (shouldShowMap ? 'flex-1 relative overflow-hidden' : 'w-0 h-0 overflow-hidden absolute'),
+    [shouldShowMap],
   );
 
-  const hudOpacityStyle = useMemo(
-    () => ({ opacity: profile.hud.opacity }),
-    [profile.hud.opacity]
-  );
+  const hudOpacityStyle = useMemo(() => ({ opacity: profile.hud.opacity }), [profile.hud.opacity]);
 
   const hudScaleStyle = useMemo(
     () => ({ transform: `scale(${profile.hud.scale})` }),
-    [profile.hud.scale]
+    [profile.hud.scale],
   );
 
   const runtimeCompositionInfo = useMemo(
@@ -304,7 +343,7 @@ export const RidePage: React.FC<RidePageProps> = ({
       routeSampling: profile.performance.routeSampling,
       batteryDrain: modeCapabilities.estimatedBatteryDrain,
     }),
-    [currentMode, shouldShowMap, hudDensity, profile, modeCapabilities]
+    [currentMode, shouldShowMap, hudDensity, profile, modeCapabilities],
   );
 
   // Camera lifecycle
@@ -326,29 +365,42 @@ export const RidePage: React.FC<RidePageProps> = ({
       mounted = false;
       stopCameraStream();
     };
-  }, [currentMode, requestPermissionAndStart, stopCameraStream, profile.performance.cameraFps, profile.mode]);
+  }, [
+    currentMode,
+    requestPermissionAndStart,
+    stopCameraStream,
+    profile.performance.cameraFps,
+    profile.mode,
+  ]);
 
   // Battery API — proper listener cleanup
   useEffect(() => {
-    let batteryManager: any = null;
+    let batteryManager: BatteryManagerLike | null = null;
     let mounted = true;
 
-    const updateBattery = (battery: any) => {
+    const updateBattery = (battery: BatteryManagerLike) => {
       if (!mounted) return;
       const level = Math.round(battery.level * 100);
       useRuntimeStore.getState().updateBatteryStatus(level, battery.charging);
     };
 
-    const onLevelChange = () => { if (batteryManager) updateBattery(batteryManager); };
-    const onChargingChange = () => { if (batteryManager) updateBattery(batteryManager); };
+    const onLevelChange = () => {
+      if (batteryManager) updateBattery(batteryManager);
+    };
+    const onChargingChange = () => {
+      if (batteryManager) updateBattery(batteryManager);
+    };
 
     const setupBattery = async () => {
       try {
         if ('getBattery' in navigator) {
-          batteryManager = await (navigator as any).getBattery();
-          updateBattery(batteryManager);
-          batteryManager.addEventListener('levelchange', onLevelChange);
-          batteryManager.addEventListener('chargingchange', onChargingChange);
+          const battery = await navigator.getBattery?.();
+          if (battery) {
+            batteryManager = battery;
+            updateBattery(battery);
+            battery.addEventListener('levelchange', onLevelChange);
+            battery.addEventListener('chargingchange', onChargingChange);
+          }
         }
       } catch (e) {
         // Battery Status API not available
@@ -372,24 +424,39 @@ export const RidePage: React.FC<RidePageProps> = ({
 
   if (!isMounted) return null;
 
-  const statusVariant = status === 'active' ? 'success' : status === 'paused' ? 'warning' : status === 'finished' ? 'info' : 'default';
+  const statusVariant =
+    status === 'active'
+      ? 'success'
+      : status === 'paused'
+        ? 'warning'
+        : status === 'finished'
+          ? 'info'
+          : 'default';
 
   return (
-    <div className="w-full h-screen flex flex-col bg-dark-950"
+    <div
+      className="w-full h-screen flex flex-col bg-dark-950"
       style={{
         paddingTop: 'env(safe-area-inset-top, 0px)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         paddingLeft: 'env(safe-area-inset-left, 0px)',
         paddingRight: 'env(safe-area-inset-right, 0px)',
-      }}>
+      }}
+    >
       <div className={mapContainerClasses}>
         {profile.camera.visible && (
           <div className="absolute inset-0 z-0">
-            <Suspense fallback={null}><CameraSurface /></Suspense>
+            <Suspense fallback={null}>
+              <CameraSurface />
+            </Suspense>
           </div>
         )}
         {profile.minimap.visible && <MinimapOverlay />}
-        {profile.map.visible && <Suspense fallback={null}><Map enableCameraFollow={enableCameraFollow} /></Suspense>}
+        {profile.map.visible && (
+          <Suspense fallback={null}>
+            <Map enableCameraFollow={enableCameraFollow} />
+          </Suspense>
+        )}
 
         <OverlayManager>
           <div className="absolute inset-0 pointer-events-none" style={hudOpacityStyle}>
@@ -403,7 +470,10 @@ export const RidePage: React.FC<RidePageProps> = ({
             </div>
           </div>
 
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto z-[500]" style={{ touchAction: 'manipulation' }}>
+          <div
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto z-[500]"
+            style={{ touchAction: 'manipulation' }}
+          >
             <button
               onClick={handlePauseResume}
               className={`px-8 py-4 rounded-xl font-bold text-lg transition-all min-h-[52px] ${
@@ -420,7 +490,10 @@ export const RidePage: React.FC<RidePageProps> = ({
             </button>
           </div>
 
-          <div className="absolute bottom-8 right-6 pointer-events-auto z-[500]" style={{ touchAction: 'manipulation' }}>
+          <div
+            className="absolute bottom-8 right-6 pointer-events-auto z-[500]"
+            style={{ touchAction: 'manipulation' }}
+          >
             <button
               onClick={handleFinish}
               className={`px-4 py-3 rounded-xl font-medium text-sm transition-all min-h-[48px] min-w-[48px] ${
@@ -458,7 +531,14 @@ export const RidePage: React.FC<RidePageProps> = ({
             <span>Amostragem: {runtimeCompositionInfo.routeSampling}</span>
             <span>Dreno: {runtimeCompositionInfo.batteryDrain}</span>
             <span>Câmera: {String(cameraStatus)}</span>
-            <span>MiniMapa: {profile.minimap.visible ? (minimapExpandedRide ? 'Visível (Expandido)' : 'Visível') : 'Oculto'}</span>
+            <span>
+              MiniMapa:{' '}
+              {profile.minimap.visible
+                ? minimapExpandedRide
+                  ? 'Visível (Expandido)'
+                  : 'Visível'
+                : 'Oculto'}
+            </span>
             <span>CameraFollow: {enableCameraFollow ? 'ON' : 'OFF'}</span>
           </div>
         </div>

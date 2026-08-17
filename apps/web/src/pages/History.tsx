@@ -51,7 +51,7 @@ export default function History() {
         (r) =>
           r.title?.toLowerCase().includes(q) ||
           r.description?.toLowerCase().includes(q) ||
-          r.tags?.some((t) => t.toLowerCase().includes(q))
+          r.tags?.some((t) => t.toLowerCase().includes(q)),
       );
     }
 
@@ -62,7 +62,7 @@ export default function History() {
     result.sort((a, b) =>
       dateSort === 'desc'
         ? new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
-        : new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
+        : new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
     );
 
     return result;
@@ -139,9 +139,7 @@ export default function History() {
 
       {filteredRides.length === 0 && rides.length > 0 && (
         <Card variant="flat" padding="md" className="text-center py-6">
-          <p className="text-sm text-gray-500">
-            Nenhuma pedalada corresponde aos filtros.
-          </p>
+          <p className="text-sm text-gray-500">Nenhuma pedalada corresponde aos filtros.</p>
         </Card>
       )}
 
@@ -157,9 +155,7 @@ export default function History() {
                 onClick={() => navigate(`/history/${ride.id}`)}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-gray-400">
-                    {formatDate(ride.startedAt)}
-                  </span>
+                  <span className="text-sm text-gray-400">{formatDate(ride.startedAt)}</span>
                   <div className="flex items-center gap-2">
                     {ride.tags?.map((tag) => (
                       <Badge key={tag} variant="default">
@@ -196,17 +192,13 @@ export default function History() {
                   </div>
                   <div>
                     <div className="text-lg font-bold text-white">
-                      {ride.averageSpeed
-                        ? `${ride.averageSpeed.toFixed(1)}`
-                        : '--'}
+                      {ride.averageSpeed ? `${ride.averageSpeed.toFixed(1)}` : '--'}
                     </div>
                     <div className="text-xs text-gray-600">km/h</div>
                   </div>
                 </div>
                 {ride.title && (
-                  <div className="mt-2 text-xs text-gray-500 truncate">
-                    {ride.title}
-                  </div>
+                  <div className="mt-2 text-xs text-gray-500 truncate">{ride.title}</div>
                 )}
               </Card>
             ))}
@@ -214,11 +206,7 @@ export default function History() {
 
           {hasMore && (
             <div className="flex justify-center pt-4">
-              <Button
-                variant="secondary"
-                onClick={loadMore}
-                isLoading={status === 'loading'}
-              >
+              <Button variant="secondary" onClick={loadMore} isLoading={status === 'loading'}>
                 Carregar mais
               </Button>
             </div>

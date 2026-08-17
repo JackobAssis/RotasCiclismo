@@ -20,16 +20,12 @@ export function BottomNav() {
             end={item.to === '/'}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-3 py-2 min-w-0 rounded-xl transition-all duration-200 ${
-                isActive
-                  ? 'text-neon-400'
-                  : 'text-gray-600 hover:text-gray-400'
+                isActive ? 'text-neon-400' : 'text-gray-600 hover:text-gray-400'
               }`
             }
           >
             <span className="text-lg leading-none">{item.icon}</span>
-            <span className="text-[10px] font-medium leading-tight">
-              {item.label}
-            </span>
+            <span className="text-[10px] font-medium leading-tight">{item.label}</span>
           </NavLink>
         ))}
       </div>

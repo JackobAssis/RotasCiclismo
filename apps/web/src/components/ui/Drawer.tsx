@@ -11,8 +11,7 @@ interface DrawerProps {
 const sideClasses = {
   left: 'inset-y-0 left-0 w-80 max-w-[85vw] translate-x-0',
   right: 'inset-y-0 right-0 w-80 max-w-[85vw] translate-x-0',
-  bottom:
-    'inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl translate-y-0',
+  bottom: 'inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl translate-y-0',
 };
 
 const enterClasses = {
@@ -21,13 +20,7 @@ const enterClasses = {
   bottom: 'translate-y-full',
 };
 
-export function Drawer({
-  open,
-  onClose,
-  title,
-  children,
-  side = 'right',
-}: DrawerProps) {
+export function Drawer({ open, onClose, title, children, side = 'right' }: DrawerProps) {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) onClose();
@@ -39,10 +32,7 @@ export function Drawer({
   return (
     <>
       {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       )}
       <div
         className={`fixed z-50 bg-dark-900 border border-dark-700 shadow-glass transition-transform duration-300 ease-in-out overflow-y-auto ${

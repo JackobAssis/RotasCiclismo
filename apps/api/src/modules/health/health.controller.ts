@@ -9,13 +9,16 @@ export class HealthController {
 
   @Get()
   async getHealth() {
-    const result = await this.healthService.getHealth();
-    return { status: result.database === 'connected' ? 'ok' : 'error' };
+    return this.healthService.getHealth();
   }
 
   @Get('ready')
   async getReadiness() {
-    const result = await this.healthService.getReadiness();
-    return { status: result.ready ? 'ready' : 'not ready' };
+    return this.healthService.getReadiness();
+  }
+
+  @Get('alive')
+  async getLiveness() {
+    return { alive: true };
   }
 }

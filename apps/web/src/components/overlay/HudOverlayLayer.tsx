@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
-import type { HudWidgetConfig, HudWidget, HudWidgetRegistry, WidgetPosition, WidgetLayer } from '../../modules/hud/types';
+import type {
+  HudWidgetConfig,
+  HudWidget,
+  HudWidgetRegistry,
+  WidgetPosition,
+  WidgetLayer,
+} from '../../modules/hud/types';
 import { HUD_Z_INDEX } from '../../modules/hud/types';
 
 interface HudOverlayLayerProps {
@@ -25,13 +31,15 @@ function getPositionClasses(position: WidgetPosition): string {
     'center-right': 'top-1/2 right-4 -translate-y-1/2',
     'bottom-left': 'bottom-4 left-4',
     'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2',
-    'bottom-right': 'bottom-4 right-4'
+    'bottom-right': 'bottom-4 right-4',
   };
   return positionMap[position];
 }
 
 function getLayerZIndex(layer: WidgetLayer): number {
-  return HUD_Z_INDEX[`hud${layer.charAt(0).toUpperCase() + layer.slice(1)}` as keyof typeof HUD_Z_INDEX];
+  return HUD_Z_INDEX[
+    `hud${layer.charAt(0).toUpperCase() + layer.slice(1)}` as keyof typeof HUD_Z_INDEX
+  ];
 }
 
 const HUD_LAYERS: WidgetLayer[] = ['base', 'interactive', 'overlay', 'modal'];
@@ -43,11 +51,17 @@ const LAYER_Z: Record<WidgetLayer, string> = {
 };
 
 export const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
-  registry, visibility, positionOverrides, hudDensity
+  registry,
+  visibility,
+  positionOverrides,
+  hudDensity,
 }) => {
   const widgetsByLayer = useMemo(() => {
     const grouped: Record<WidgetLayer, Array<[string, HudWidgetConfig, HudWidget]>> = {
-      base: [], interactive: [], overlay: [], modal: []
+      base: [],
+      interactive: [],
+      overlay: [],
+      modal: [],
     };
 
     Object.entries(registry).forEach(([key, entry]) => {
@@ -73,7 +87,11 @@ export const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
         if (widgets.length === 0) return null;
         const ptrClass = layer === 'base' ? 'pointer-events-none' : 'pointer-events-auto';
         return (
-          <div key={layer} className={`fixed inset-0 pointer-events-none ${LAYER_Z[layer]}`} style={safeAreaStyle}>
+          <div
+            key={layer}
+            className={`fixed inset-0 pointer-events-none ${LAYER_Z[layer]}`}
+            style={safeAreaStyle}
+          >
             {widgets.map(([key, config, Component]) => (
               <div
                 key={key}
@@ -88,8 +106,11 @@ export const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
           </div>
         );
       })}
-      <div className="fixed inset-0 pointer-events-none z-[500]" data-component="ar-overlay-future"
-           title="Placeholder for future AR/navigation rendering" />
+      <div
+        className="fixed inset-0 pointer-events-none z-[500]"
+        data-component="ar-overlay-future"
+        title="Placeholder for future AR/navigation rendering"
+      />
     </>
   );
 };

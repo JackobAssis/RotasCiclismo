@@ -4,7 +4,12 @@
  * Standardized exception types for the application.
  */
 
-import { BadRequestException, UnauthorizedException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  UnauthorizedException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 
 export class UserAlreadyExistsException extends ConflictException {
   constructor(email: string) {

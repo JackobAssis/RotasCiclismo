@@ -46,7 +46,10 @@ describe('Button', () => {
 
   it('renders left and right icons', () => {
     render(
-      <Button leftIcon={<span data-testid="left-icon">L</span>} rightIcon={<span data-testid="right-icon">R</span>}>
+      <Button
+        leftIcon={<span data-testid="left-icon">L</span>}
+        rightIcon={<span data-testid="right-icon">R</span>}
+      >
         Icon Button
       </Button>,
     );

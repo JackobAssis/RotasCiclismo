@@ -1,7 +1,12 @@
 import { storageService } from './storage.service';
 import { eventBus } from '../lib/eventBus';
 import { useAuthStore } from '../stores/auth.store';
-import type { SyncTask, SyncWorkerCommand, SyncWorkerResponse, SyncWorkerStatus } from '../../../../packages/types/src/index';
+import type {
+  SyncTask,
+  SyncWorkerCommand,
+  SyncWorkerResponse,
+  SyncWorkerStatus,
+} from '../../../../packages/types/src/index';
 
 const POLL_INTERVAL = 10_000; // 10s
 const WORKER_RESPONSE_TIMEOUT = 25_000; // 25s per task
@@ -10,12 +15,15 @@ const MAX_TASK_BATCH = 5;
 let polling = false;
 let worker: Worker | null = null;
 let workerStatus: SyncWorkerStatus = 'initializing';
-const pendingTaskResolvers = new Map<number | string, {
-  resolve: () => void;
-  reject: (reason?: any) => void;
-  timeoutId: number;
-  rideId?: string;
-}>();
+const pendingTaskResolvers = new Map<
+  number | string,
+  {
+    resolve: () => void;
+    reject: (reason?: unknown) => void;
+    timeoutId: number;
+    rideId?: string;
+  }
+>();
 
 function isOnline() {
   return typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -45,7 +53,7 @@ function createWorker(): Worker | null {
   }
 
   const instance = new Worker(new URL('../workers/sync.worker.ts', import.meta.url), {
-    type: 'module'
+    type: 'module',
   });
 
   instance.onmessage = handleWorkerMessage;
@@ -91,7 +99,7 @@ function handleWorkerMessage(event: MessageEvent<SyncWorkerResponse>) {
       eventBus.emit('sync:task:progress', {
         taskId: data.taskId,
         progress: data.progress,
-        message: data.message
+        message: data.message,
       });
       return;
     case 'success':
@@ -114,7 +122,12 @@ async function processWorkerSuccess(taskId: number | string, rideId: string) {
   eventBus.emit('sync:task:finished', { taskId, rideId, ok: true });
 }
 
-async function processWorkerFailure(taskId: number | string, rideId: string, error?: string, recoverable = true) {
+async function processWorkerFailure(
+  taskId: number | string,
+  rideId: string,
+  error?: string,
+  recoverable = true,
+) {
   pendingTaskResolvers.get(taskId)?.reject(new Error(error ?? 'sync_failure'));
   clearTaskTimeout(taskId);
 
@@ -152,8 +165,8 @@ function createWorkerTimeout(taskId: number | string, rideId?: string) {
     eventBus.emit('sync:task:failed', {
       taskId,
       rideId: rideId ?? String(taskId),
-      attempts: (await getTaskAttempts(taskId)),
-      error: 'worker_timeout'
+      attempts: await getTaskAttempts(taskId),
+      error: 'worker_timeout',
     });
   }, WORKER_RESPONSE_TIMEOUT);
 }
@@ -166,7 +179,7 @@ function dispatchTaskBatch(tasks: SyncTask[]) {
 
   const payload: SyncWorkerCommand = {
     type: 'processTasks',
-    tasks: tasks.map((task) => ({ ...task }))
+    tasks: tasks.map((task) => ({ ...task })),
   };
 
   const taskPromises: Promise<void>[] = [];
@@ -196,7 +209,10 @@ async function processQueueOnce() {
   const batch = tasks.slice(0, Math.min(tasks.length, MAX_TASK_BATCH));
 
   for (const task of batch) {
-    await storageService.updateSyncTask(task.id, { status: 'in_progress', attempts: (task.attempts || 0) + 1 });
+    await storageService.updateSyncTask(task.id as number | string, {
+      status: 'in_progress',
+      attempts: (task.attempts || 0) + 1,
+    });
   }
 
   await dispatchTaskBatch(batch);
@@ -232,21 +248,23 @@ export const syncService = {
     eventBus.on('sync:manual:trigger', () => {
       processQueueOnce().catch(() => {});
     });
-    eventBus.on('sync:manual:cancel', ({ taskId }: any) => {
+    eventBus.on('sync:manual:cancel', ({ taskId }: { taskId: number | string }) => {
       if (!worker) return;
       worker.postMessage({ type: 'cancelTasks', taskIds: [taskId] });
     });
     eventBus.on('sync:manual:clearCompleted', async () => {
       const tasks = await storageService.getAllSyncTasks();
       const completed = tasks.filter((task) => task.status === 'completed');
-      await Promise.all(completed.map((task) => storageService.removeSyncTask(task.id)));
+      await Promise.all(
+        completed.map((task) => storageService.removeSyncTask(task.id as number | string)),
+      );
     });
   },
 
   stop() {
     polling = false;
     terminateWorker();
-  }
+  },
 };
 
 syncService.start();

@@ -21,7 +21,7 @@ const DurationWidgetComponent: HudWidget = memo(({ label = 'Duration' }) => {
       const minutes = Math.floor((elapsed % 3600) / 60);
       const seconds = elapsed % 60;
       setDisplayDuration(
-        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
       );
     }, 1000);
 
@@ -43,9 +43,18 @@ export const DurationWidget = memo(() => {
   const overlay = useOverlay();
 
   useEffect(() => {
-    overlay.registerWidget('duration', {
-      id: 'duration', label: 'Duration', position: 'bottom-right', layer: 'base', visible: true, priority: 10
-    }, DurationWidgetComponent);
+    overlay.registerWidget(
+      'duration',
+      {
+        id: 'duration',
+        label: 'Duration',
+        position: 'bottom-right',
+        layer: 'base',
+        visible: true,
+        priority: 10,
+      },
+      DurationWidgetComponent,
+    );
     return () => overlay.unregisterWidget('duration');
   }, [overlay]);
 

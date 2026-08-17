@@ -28,8 +28,7 @@ const CameraSurface: React.FC<CameraSurfaceProps> = ({ className = '' }) => {
   }, [stopStream]);
 
   return (
-    <div className={`absolute inset-0 ${className} bg-black`}
-         data-component="camera-surface">
+    <div className={`absolute inset-0 ${className} bg-black`} data-component="camera-surface">
       {status === 'INITIALIZING' && <CameraLoading />}
       {status === 'IDLE' && <CameraIdle />}
       {status === 'ERROR' && (

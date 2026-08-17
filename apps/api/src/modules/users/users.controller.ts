@@ -7,6 +7,7 @@
 import { Controller, Get, Patch, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { UsersService, UserProfileDto } from './users.service';
 import { JwtAuthGuard } from '../../common/auth.guard';
+import { AuthenticatedRequest } from '../../common/jwt.types';
 
 @Controller('users')
 export class UsersController {
@@ -25,7 +26,7 @@ export class UsersController {
    */
   @Get('me/profile')
   @UseGuards(JwtAuthGuard)
-  async getMyProfile(@Request() req: any): Promise<UserProfileDto> {
+  async getMyProfile(@Request() req: AuthenticatedRequest): Promise<UserProfileDto> {
     return this.usersService.getProfile(req.user.userId, true);
   }
 
@@ -36,8 +37,15 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async updateProfile(
     @Param('id') userId: string,
-    @Request() req: any,
-    @Body() updates: any,
+    @Request() req: AuthenticatedRequest,
+    @Body()
+    updates: {
+      displayName?: string;
+      bio?: string;
+      avatar?: string;
+      theme?: string;
+      language?: string;
+    },
   ): Promise<UserProfileDto> {
     // Only users can update their own profile
     if (req.user.userId !== userId) {

@@ -7,7 +7,7 @@ import { recoveryService } from './services/recovery.service';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );
 
 // Non-blocking recovery on app startup

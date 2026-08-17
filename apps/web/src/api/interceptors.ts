@@ -1,17 +1,17 @@
 /**
  * API Interceptors: Request and response processing pipeline
- * 
+ *
  * Request interceptors:
  * - Inject auth token
  * - Set headers (Content-Type, etc.)
  * - Log requests
  * - Validate payloads
- * 
+ *
  * Response interceptors:
  * - Log responses
  * - Transform data
  * - Validate response structure
- * 
+ *
  * Error interceptors:
  * - Handle 401 (token refresh)
  * - Handle rate limiting
@@ -28,7 +28,7 @@ import { apiClient } from './client';
 
 /**
  * Auth token injection interceptor
- * 
+ *
  * Injects JWT token into Authorization header
  * Called by: TokenManager.setTokenInterceptor()
  */
@@ -49,7 +49,7 @@ export function createAuthInterceptor(getToken: () => string | null) {
 
 /**
  * Content-Type interceptor
- * 
+ *
  * Ensures Content-Type is set for requests with bodies
  */
 export function createContentTypeInterceptor(): (config: RequestConfig) => RequestConfig {
@@ -67,7 +67,7 @@ export function createContentTypeInterceptor(): (config: RequestConfig) => Reque
 
 /**
  * Request logging interceptor (development only)
- * 
+ *
  * Logs all requests for debugging
  */
 export function createLoggingInterceptor(enabled: boolean = false) {
@@ -90,11 +90,11 @@ export function createLoggingInterceptor(enabled: boolean = false) {
 
 /**
  * Response logging interceptor (development only)
- * 
+ *
  * Logs all responses for debugging
  */
 export function createResponseLoggingInterceptor(enabled: boolean = false) {
-  return (response: any): any => {
+  return (response: unknown): unknown => {
     if (enabled) {
       console.log('[API Response]', {
         data: response,
@@ -108,18 +108,28 @@ export function createResponseLoggingInterceptor(enabled: boolean = false) {
 
 /**
  * Response validation interceptor
- * 
+ *
  * Ensures response has expected structure
  * Throws if response is malformed
  */
+interface HttpError extends Error {
+  code?: string;
+  statusCode?: number;
+}
+
 export function createResponseValidationInterceptor() {
-  return (response: any): any => {
+  return (response: unknown): unknown => {
     // If response has error property, it's an error response
-    if (response && response.error) {
-      const error: any = new Error(response.error.message);
-      error.code = response.error.code;
-      error.statusCode = response.error.statusCode;
-      throw error;
+    if (typeof response === 'object' && response !== null && 'error' in response) {
+      const err = (response as { error?: { message?: string; code?: string; statusCode?: number } })
+        .error;
+      if (err) {
+        const error: HttpError = Object.assign(new Error(err.message), {
+          code: err.code,
+          statusCode: err.statusCode,
+        });
+        throw error;
+      }
     }
 
     return response;
@@ -132,18 +142,18 @@ export function createResponseValidationInterceptor() {
 
 /**
  * Token refresh interceptor
- * 
+ *
  * Handles 401 responses by:
  * 1. Attempting token refresh
  * 2. Retrying original request
  * 3. Redirecting to login if refresh fails
- * 
+ *
  * Called by: setupErrorHandling()
  */
 export function createTokenRefreshInterceptor(
   getRefreshToken: () => string | null,
   setTokens: (tokens: { accessToken: string; refreshToken: string }) => void,
-  redirectToLogin: () => void
+  redirectToLogin: () => void,
 ) {
   return async (error: ApiError): Promise<ApiError> => {
     // Only handle 401 errors
@@ -196,7 +206,7 @@ export function createTokenRefreshInterceptor(
 
 /**
  * Rate limit interceptor
- * 
+ *
  * Handles 429 (Too Many Requests) by:
  * 1. Extracting Retry-After header
  * 2. Waiting before retry
@@ -218,7 +228,7 @@ export function createRateLimitInterceptor() {
 
 /**
  * Error logging interceptor
- * 
+ *
  * Logs all errors for monitoring
  */
 export function createErrorLoggingInterceptor(enabled: boolean = false) {
@@ -240,14 +250,13 @@ export function createErrorLoggingInterceptor(enabled: boolean = false) {
 
 /**
  * Network error handler
- * 
+ *
  * Provides user-friendly messages for network errors
  */
 export function createNetworkErrorInterceptor() {
   return async (error: ApiError): Promise<ApiError> => {
     if (error.isNetworkError) {
-      error.message =
-        error.message || 'Network error. Please check your connection.';
+      error.message = error.message || 'Network error. Please check your connection.';
     }
 
     if (error.isTimeout) {
@@ -268,7 +277,7 @@ export function createNetworkErrorInterceptor() {
 
 /**
  * Setup all interceptors
- * 
+ *
  * Called during app initialization
  * Configures full request/response pipeline
  */
@@ -282,29 +291,21 @@ export function setupInterceptors(options: {
   // Request interceptors
   apiClient.addRequestInterceptor(createContentTypeInterceptor());
   apiClient.addRequestInterceptor(createAuthInterceptor(options.getToken));
-  apiClient.addRequestInterceptor(
-    createLoggingInterceptor(options.enableLogging)
-  );
+  apiClient.addRequestInterceptor(createLoggingInterceptor(options.enableLogging));
 
   // Response interceptors
-  apiClient.addResponseInterceptor(
-    createResponseValidationInterceptor()
-  );
-  apiClient.addResponseInterceptor(
-    createResponseLoggingInterceptor(options.enableLogging)
-  );
+  apiClient.addResponseInterceptor(createResponseValidationInterceptor());
+  apiClient.addResponseInterceptor(createResponseLoggingInterceptor(options.enableLogging));
 
   // Error interceptors
-  apiClient.addErrorInterceptor(
-    createErrorLoggingInterceptor(options.enableLogging)
-  );
+  apiClient.addErrorInterceptor(createErrorLoggingInterceptor(options.enableLogging));
   apiClient.addErrorInterceptor(createNetworkErrorInterceptor());
   apiClient.addErrorInterceptor(
     createTokenRefreshInterceptor(
       options.getRefreshToken,
       options.setTokens,
-      options.redirectToLogin
-    )
+      options.redirectToLogin,
+    ),
   );
   apiClient.addErrorInterceptor(createRateLimitInterceptor());
 }

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useGPSStore } from './gps.store';
-import { useRuntimeStore } from './runtime.store';
 
 export interface AppSettings {
   // GPS
@@ -74,17 +73,11 @@ export const useSettingsStore = create<SettingsState>()(
 
           // Apply accessibility settings
           if (partial.reducedMotion !== undefined) {
-            document.documentElement.classList.toggle(
-              'reduce-motion',
-              partial.reducedMotion
-            );
+            document.documentElement.classList.toggle('reduce-motion', partial.reducedMotion);
           }
 
           if (partial.highContrast !== undefined) {
-            document.documentElement.classList.toggle(
-              'high-contrast',
-              partial.highContrast
-            );
+            document.documentElement.classList.toggle('high-contrast', partial.highContrast);
           }
 
           return { settings: updated };
@@ -100,6 +93,6 @@ export const useSettingsStore = create<SettingsState>()(
       partialize: (state) => ({
         settings: state.settings,
       }),
-    }
-  )
+    },
+  ),
 );

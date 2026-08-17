@@ -3,10 +3,7 @@ interface LoadingStateProps {
   fullPage?: boolean;
 }
 
-export function LoadingState({
-  message = 'Carregando...',
-  fullPage = false,
-}: LoadingStateProps) {
+export function LoadingState({ message = 'Carregando...', fullPage = false }: LoadingStateProps) {
   const content = (
     <div className="flex flex-col items-center justify-center gap-4">
       <div className="w-8 h-8 border-2 border-neon-500 border-t-transparent rounded-full animate-spin" />
@@ -16,13 +13,9 @@ export function LoadingState({
 
   if (fullPage) {
     return (
-      <div className="flex items-center justify-center w-full h-screen bg-dark-950">
-        {content}
-      </div>
+      <div className="flex items-center justify-center w-full h-screen bg-dark-950">{content}</div>
     );
   }
 
-  return (
-    <div className="flex items-center justify-center py-16">{content}</div>
-  );
+  return <div className="flex items-center justify-center py-16">{content}</div>;
 }

@@ -6,9 +6,10 @@
  * POST /uploads/local/:id     - Upload file to local storage (future: remove)
  */
 
-import { Controller, Post, Body, UseGuards, Request, Param, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { UploadsService } from './uploads.service';
 import { JwtAuthGuard } from '../../common/auth.guard';
+import { AuthenticatedRequest } from '../../common/jwt.types';
 
 export interface GetUploadUrlRequest {
   fileType: 'snapshot' | 'video';
@@ -30,7 +31,7 @@ export class UploadsController {
    * Returns URL where client should PUT/POST the file.
    */
   @Post('url')
-  async getUploadUrl(@Request() req: any, @Body() body: GetUploadUrlRequest) {
+  async getUploadUrl(@Request() req: AuthenticatedRequest, @Body() body: GetUploadUrlRequest) {
     this.uploadsService.validateFile(body.fileType, body.fileSize);
 
     return this.uploadsService.getUploadUrl(req.user.userId, body.fileType, body.fileSize);
@@ -44,7 +45,7 @@ export class UploadsController {
    * Shows user their storage usage and quota.
    */
   @Post('stats')
-  async getStorageStats(@Request() req: any) {
+  async getStorageStats(@Request() req: AuthenticatedRequest) {
     return this.uploadsService.getStorageStats(req.user.userId);
   }
 }

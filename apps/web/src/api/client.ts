@@ -1,6 +1,6 @@
 /**
  * API Layer: Centralized HTTP Client
- * 
+ *
  * Provides:
  * - Request/response interceptors
  * - Auth token injection
@@ -8,7 +8,7 @@
  * - Offline detection and queuing
  * - Timeout handling
  * - Type-safe responses
- * 
+ *
  * DESIGN PRINCIPLE:
  * This layer is completely isolated from UI and runtime.
  * It doesn't modify stores directly.
@@ -27,12 +27,12 @@ export interface RetryConfig {
 export interface RequestConfig {
   method: HttpMethod;
   headers?: Record<string, string>;
-  body?: any;
+  body?: unknown;
   timeout?: number;
   retry?: RetryConfig;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
@@ -64,14 +64,12 @@ const DEFAULT_RETRY_CONFIG = {
 /**
  * Request interceptor type
  */
-type RequestInterceptor = (
-  config: RequestConfig
-) => RequestConfig | Promise<RequestConfig>;
+type RequestInterceptor = (config: RequestConfig) => RequestConfig | Promise<RequestConfig>;
 
 /**
  * Response interceptor type
  */
-type ResponseInterceptor<T = any> = (response: T) => T | Promise<T>;
+type ResponseInterceptor<T = unknown> = (response: T) => T | Promise<T>;
 
 /**
  * Error interceptor type
@@ -80,7 +78,7 @@ type ErrorInterceptor = (error: ApiError) => ApiError | Promise<ApiError>;
 
 /**
  * Centralized API Client
- * 
+ *
  * All requests go through this client:
  * 1. Request interceptors (auth injection, headers)
  * 2. Fetch execution
@@ -92,7 +90,7 @@ export class ApiClient {
   private requestInterceptors: RequestInterceptor[] = [];
   private responseInterceptors: ResponseInterceptor[] = [];
   private errorInterceptors: ErrorInterceptor[] = [];
-  private pendingRequests = new Map<string, Promise<any>>();
+  private pendingRequests = new Map<string, Promise<unknown>>();
 
   constructor(baseUrl: string = 'http://localhost:3000/api') {
     this.baseUrl = baseUrl;
@@ -127,7 +125,7 @@ export class ApiClient {
 
   /**
    * Main request method
-   * 
+   *
    * Handles:
    * - Request/response interceptors
    * - Retry with exponential backoff
@@ -135,16 +133,12 @@ export class ApiClient {
    * - Error normalization
    * - Request deduplication
    */
-  async request<T = any>(
-    method: HttpMethod,
-    path: string,
-    config?: RequestConfig
-  ): Promise<T> {
+  async request<T = unknown>(method: HttpMethod, path: string, config?: RequestConfig): Promise<T> {
     // Deduplicate concurrent requests (GET only)
     const cacheKey = `${method}:${path}`;
 
     if (method === 'GET' && this.pendingRequests.has(cacheKey)) {
-      return this.pendingRequests.get(cacheKey)!;
+      return this.pendingRequests.get(cacheKey)! as Promise<T>;
     }
 
     const promise = this._executeRequest<T>(method, path, config);
@@ -159,10 +153,10 @@ export class ApiClient {
     }
   }
 
-  private async _executeRequest<T = any>(
+  private async _executeRequest<T = unknown>(
     method: HttpMethod,
     path: string,
-    config?: RequestConfig
+    config?: RequestConfig,
   ): Promise<T> {
     let currentConfig: RequestConfig = {
       method,
@@ -190,7 +184,7 @@ export class ApiClient {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const response = await this._fetchWithTimeout(url, currentConfig, timeout);
-        
+
         // Parse response
         let data: T = response as unknown as T;
         try {
@@ -202,7 +196,7 @@ export class ApiClient {
 
         // Run response interceptors
         for (const interceptor of this.responseInterceptors) {
-          data = await interceptor(data);
+          data = (await interceptor(data)) as T;
         }
 
         return data;
@@ -222,17 +216,15 @@ export class ApiClient {
         }
 
         // Calculate backoff
-        const initialBackoff = retryConfig.initialBackoffMs ?? DEFAULT_RETRY_CONFIG.initialBackoffMs;
+        const initialBackoff =
+          retryConfig.initialBackoffMs ?? DEFAULT_RETRY_CONFIG.initialBackoffMs;
         const multiplier = retryConfig.backoffMultiplier ?? DEFAULT_RETRY_CONFIG.backoffMultiplier;
         const maxBackoff = retryConfig.maxBackoffMs ?? DEFAULT_RETRY_CONFIG.maxBackoffMs;
 
-        const backoffMs = Math.min(
-          initialBackoff * Math.pow(multiplier, attempt),
-          maxBackoff
-        );
+        const backoffMs = Math.min(initialBackoff * Math.pow(multiplier, attempt), maxBackoff);
 
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
 
@@ -245,7 +237,7 @@ export class ApiClient {
   private _fetchWithTimeout(
     url: string,
     config: RequestConfig,
-    timeoutMs: number
+    timeoutMs: number,
   ): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -260,19 +252,19 @@ export class ApiClient {
       fetchOptions.body = JSON.stringify(config.body);
     }
 
-    return fetch(url, fetchOptions)
-      .finally(() => clearTimeout(timeoutId));
+    return fetch(url, fetchOptions).finally(() => clearTimeout(timeoutId));
   }
 
   /**
    * Normalize errors to consistent format
    */
-  private _normalizeError(
-    error: any,
-    method: string,
-    path: string
-  ): ApiError {
-    if (error?.name === 'AbortError') {
+  private _normalizeError(error: unknown, method: string, path: string): ApiError {
+    if (
+      error !== null &&
+      typeof error === 'object' &&
+      'name' in error &&
+      (error as { name?: unknown }).name === 'AbortError'
+    ) {
       return {
         message: `Request timed out: ${method} ${path}`,
         statusCode: 0,
@@ -294,22 +286,40 @@ export class ApiClient {
       };
     }
 
-    if (error?.statusCode || error?.status) {
-      const statusCode = error.statusCode || error.status;
-
-      return {
-        message: error.message || `Request failed: ${method} ${path}`,
-        statusCode,
-        isNetworkError: false,
-        isTimeout: false,
-        isOffline: false,
-        retryable: statusCode >= 500 || statusCode === 429,
+    if (
+      error !== null &&
+      typeof error === 'object' &&
+      ('statusCode' in error || 'status' in error)
+    ) {
+      const { statusCode, status, message } = error as {
+        statusCode?: number;
+        status?: number;
+        message?: string;
       };
+      if (statusCode || status) {
+        const code = statusCode || status || 0;
+        return {
+          message: message || `Request failed: ${method} ${path}`,
+          statusCode: code,
+          isNetworkError: false,
+          isTimeout: false,
+          isOffline: false,
+          retryable: code >= 500 || code === 429,
+        };
+      }
     }
 
     // Unknown error
+    let fallbackMessage = `Unknown error: ${method} ${path}`;
+    if (error instanceof Error) {
+      fallbackMessage = error.message;
+    } else if (error !== null && typeof error === 'object' && 'message' in error) {
+      const m = (error as { message?: unknown }).message;
+      if (typeof m === 'string') fallbackMessage = m;
+    }
+
     return {
-      message: error?.message || `Unknown error: ${method} ${path}`,
+      message: fallbackMessage,
       statusCode: 0,
       isNetworkError: false,
       isTimeout: false,
@@ -321,41 +331,45 @@ export class ApiClient {
   /**
    * GET request
    */
-  get<T = any>(path: string, config?: RequestConfig): Promise<T> {
+  get<T = unknown>(path: string, config?: RequestConfig): Promise<T> {
     return this.request<T>('GET', path, config);
   }
 
   /**
    * POST request
    */
-  post<T = any>(path: string, body?: any, config?: RequestConfig): Promise<T> {
+  post<T = unknown>(path: string, body?: unknown, config?: RequestConfig): Promise<T> {
     return this.request<T>('POST', path, { ...config, method: 'POST', body });
   }
 
   /**
    * PUT request
    */
-  put<T = any>(path: string, body?: any, config?: RequestConfig): Promise<T> {
+  put<T = unknown>(path: string, body?: unknown, config?: RequestConfig): Promise<T> {
     return this.request<T>('PUT', path, { ...config, method: 'PUT', body });
   }
 
   /**
    * PATCH request
    */
-  patch<T = any>(path: string, body?: any, config?: RequestConfig): Promise<T> {
+  patch<T = unknown>(path: string, body?: unknown, config?: RequestConfig): Promise<T> {
     return this.request<T>('PATCH', path, { ...config, method: 'PATCH', body });
   }
 
   /**
    * DELETE request
    */
-  delete<T = any>(path: string, config?: RequestConfig): Promise<T> {
+  delete<T = unknown>(path: string, config?: RequestConfig): Promise<T> {
     return this.request<T>('DELETE', path, config);
   }
 }
 
 function getApiBaseUrl(): string {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
     return 'https://cycling-api-production.up.railway.app/api';
   }
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {

@@ -11,7 +11,7 @@ const RecordingStatusWidgetComponent: HudWidget = memo(({ label = 'Recording' })
     idle: { color: 'bg-gray-500/10 text-gray-400', icon: '⊘', label: 'Ready' },
     active: { color: 'bg-red-500/10 text-red-400', icon: '●', label: 'Recording' },
     paused: { color: 'bg-yellow-500/10 text-yellow-400', icon: '⏸', label: 'Paused' },
-    finished: { color: 'bg-green-500/10 text-green-400', icon: '✓', label: 'Finished' }
+    finished: { color: 'bg-green-500/10 text-green-400', icon: '✓', label: 'Finished' },
   };
 
   const config = statusConfig[status];
@@ -23,7 +23,9 @@ const RecordingStatusWidgetComponent: HudWidget = memo(({ label = 'Recording' })
         <span className="text-lg font-bold">{config.icon}</span>
         <div className="text-sm font-bold">{config.label}</div>
       </div>
-      <div className="text-xs opacity-75 mt-1">{mode === 'GPS_CAMERA' ? 'GPS + Camera' : 'GPS Only'}</div>
+      <div className="text-xs opacity-75 mt-1">
+        {mode === 'GPS_CAMERA' ? 'GPS + Camera' : 'GPS Only'}
+      </div>
     </div>
   );
 });
@@ -34,9 +36,18 @@ export const RecordingStatusWidget = memo(() => {
   const overlay = useOverlay();
 
   useEffect(() => {
-    overlay.registerWidget('recording-status', {
-      id: 'recording-status', label: 'Recording', position: 'top-right', layer: 'base', visible: true, priority: 15
-    }, RecordingStatusWidgetComponent);
+    overlay.registerWidget(
+      'recording-status',
+      {
+        id: 'recording-status',
+        label: 'Recording',
+        position: 'top-right',
+        layer: 'base',
+        visible: true,
+        priority: 15,
+      },
+      RecordingStatusWidgetComponent,
+    );
     return () => overlay.unregisterWidget('recording-status');
   }, [overlay]);
 

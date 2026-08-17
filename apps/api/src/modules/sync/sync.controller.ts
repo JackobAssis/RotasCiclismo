@@ -14,6 +14,7 @@
 import { Controller, Post, Get, Param, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { SyncService, CreateSyncTaskDto } from './sync.service';
 import { JwtAuthGuard } from '../../common/auth.guard';
+import { AuthenticatedRequest } from '../../common/jwt.types';
 
 @Controller('sync')
 @UseGuards(JwtAuthGuard)
@@ -29,7 +30,7 @@ export class SyncController {
    * Frontend calls this to enqueue data for sync.
    */
   @Post('tasks')
-  async createTask(@Request() req: any, @Body() dto: CreateSyncTaskDto) {
+  async createTask(@Request() req: AuthenticatedRequest, @Body() dto: CreateSyncTaskDto) {
     return this.syncService.createSyncTask(req.user.userId, dto);
   }
 
@@ -41,7 +42,7 @@ export class SyncController {
    * Frontend polls to see what needs syncing.
    */
   @Get('tasks')
-  async getPendingTasks(@Request() req: any, @Query('limit') limit?: string) {
+  async getPendingTasks(@Request() req: AuthenticatedRequest, @Query('limit') limit?: string) {
     return this.syncService.getPendingTasks(req.user.userId, limit ? parseInt(limit, 10) : 50);
   }
 
@@ -51,7 +52,7 @@ export class SyncController {
    * GET /sync/tasks/:id
    */
   @Get('tasks/:id')
-  async getTask(@Param('id') taskId: string, @Request() req: any) {
+  async getTask(@Param('id') taskId: string, @Request() req: AuthenticatedRequest) {
     return this.syncService.getSyncTask(taskId, req.user.userId);
   }
 
@@ -61,7 +62,7 @@ export class SyncController {
    * GET /sync/tasks/:id/status
    */
   @Get('tasks/:id/status')
-  async getTaskStatus(@Param('id') taskId: string, @Request() req: any) {
+  async getTaskStatus(@Param('id') taskId: string, @Request() req: AuthenticatedRequest) {
     return this.syncService.getTaskStatus(taskId, req.user.userId);
   }
 
@@ -84,7 +85,10 @@ export class SyncController {
    * Sets status back to PENDING for reprocessing.
    */
   @Post('tasks/:id/retry')
-  async retryTask(@Param('id') taskId: string, @Request() req: any): Promise<{ success: boolean }> {
+  async retryTask(
+    @Param('id') taskId: string,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ success: boolean }> {
     const task = await this.syncService.getSyncTask(taskId, req.user.userId);
 
     if (task.status !== 'FAILED') {
@@ -104,7 +108,7 @@ export class SyncController {
    * Shows user: pending, completed, failed task counts.
    */
   @Get('stats')
-  async getSyncStats(@Request() req: any) {
+  async getSyncStats(@Request() req: AuthenticatedRequest) {
     return this.syncService.getSyncStats(req.user.userId);
   }
 }

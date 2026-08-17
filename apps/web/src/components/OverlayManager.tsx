@@ -1,7 +1,12 @@
 import React, { ReactNode, useMemo, useState, useCallback, createContext, useContext } from 'react';
-import { useRuntimeStore, useShouldShowHud, useHudDensity } from '../stores/runtime.store';
-import type { HudOverlayContext, HudWidgetConfig, HudWidget, HudWidgetRegistry, WidgetPosition, WidgetLayer } from '../modules/hud/types';
-import { HUD_Z_INDEX } from '../modules/hud/types';
+import { useShouldShowHud, useHudDensity } from '../stores/runtime.store';
+import type {
+  HudOverlayContext,
+  HudWidgetConfig,
+  HudWidget,
+  HudWidgetRegistry,
+  WidgetPosition,
+} from '../modules/hud/types';
 import { HudOverlayLayer } from './overlay/HudOverlayLayer';
 
 /**
@@ -98,10 +103,15 @@ export const OverlayManager: React.FC<OverlayManagerProps> = ({ children }) => {
    * - 'minimal': only critical widgets visible (priority >= 15)
    */
   const registerWidget = useCallback(
-    (key: string, config: HudWidgetConfig, widget: HudWidget, selector?: (state: any) => any) => {
+    (
+      key: string,
+      config: HudWidgetConfig,
+      widget: HudWidget,
+      selector?: (state: unknown) => unknown,
+    ) => {
       setRegistry((prev) => ({
         ...prev,
-        [key]: { config, component: widget, selector }
+        [key]: { config, component: widget, selector },
       }));
 
       // Determine visibility based on HUD density and widget priority
@@ -116,7 +126,7 @@ export const OverlayManager: React.FC<OverlayManagerProps> = ({ children }) => {
         return { ...prev, [key]: isVisible };
       });
     },
-    [shouldShowHud, hudDensity]
+    [shouldShowHud, hudDensity],
   );
 
   /**
@@ -159,10 +169,10 @@ export const OverlayManager: React.FC<OverlayManagerProps> = ({ children }) => {
       if (!entry) return undefined;
       return {
         ...entry.config,
-        position: positionOverrides[key] ?? entry.config.position
+        position: positionOverrides[key] ?? entry.config.position,
       };
     },
-    [registry, positionOverrides]
+    [registry, positionOverrides],
   );
 
   /**
@@ -183,18 +193,21 @@ export const OverlayManager: React.FC<OverlayManagerProps> = ({ children }) => {
       updateWidgetVisibility,
       updateWidgetPosition,
       getWidgetConfig,
-      getActiveWidgets
+      getActiveWidgets,
     }),
-    [registerWidget, unregisterWidget, updateWidgetVisibility, updateWidgetPosition, getWidgetConfig, getActiveWidgets]
+    [
+      registerWidget,
+      unregisterWidget,
+      updateWidgetVisibility,
+      updateWidgetPosition,
+      getWidgetConfig,
+      getActiveWidgets,
+    ],
   );
 
   // If HUD is disabled by runtime mode, don't render overlay layer
   if (!shouldShowHud) {
-    return (
-      <OverlayContext.Provider value={contextValue}>
-        {children}
-      </OverlayContext.Provider>
-    );
+    return <OverlayContext.Provider value={contextValue}>{children}</OverlayContext.Provider>;
   }
 
   return (

@@ -27,7 +27,7 @@ export class HealthService {
         status: 'error',
         timestamp: new Date().toISOString(),
         database: 'disconnected',
-        error: (err as any).message,
+        error: (err as Error).message,
       };
     }
   }

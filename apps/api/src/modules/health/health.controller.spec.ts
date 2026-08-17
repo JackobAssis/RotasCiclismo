@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 
 describe('HealthController', () => {
   let controller: HealthController;
-  let mockPrisma: any;
+  let mockPrisma: { $queryRaw: jest.Mock };
 
   beforeEach(async () => {
     mockPrisma = {
@@ -14,10 +14,7 @@ describe('HealthController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
-      providers: [
-        HealthService,
-        { provide: PrismaClient, useValue: mockPrisma },
-      ],
+      providers: [HealthService, { provide: PrismaClient, useValue: mockPrisma }],
     }).compile();
 
     controller = module.get<HealthController>(HealthController);

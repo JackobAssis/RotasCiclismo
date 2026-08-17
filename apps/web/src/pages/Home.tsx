@@ -30,10 +30,7 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <PageHeader
-          title={`Olá, ${displayName}`}
-          subtitle="Pronto para sua próxima pedalada"
-        />
+        <PageHeader title={`Olá, ${displayName}`} subtitle="Pronto para sua próxima pedalada" />
         <Button variant="ghost" size="sm" onClick={handleLogout}>
           Sair
         </Button>
@@ -41,18 +38,10 @@ export default function Home() {
 
       <Section title="Resumo">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard
-            label="Pedaladas"
-            value={stats?.totalRides ?? '--'}
-            variant="neon"
-          />
+          <StatCard label="Pedaladas" value={stats?.totalRides ?? '--'} variant="neon" />
           <StatCard
             label="Distância"
-            value={
-              stats?.totalDistance
-                ? `${stats.totalDistance.toFixed(1)} km`
-                : '-- km'
-            }
+            value={stats?.totalDistance ? `${stats.totalDistance.toFixed(1)} km` : '-- km'}
             variant="neon"
           />
           <StatCard
@@ -64,11 +53,7 @@ export default function Home() {
             }
             variant="neon"
           />
-          <StatCard
-            label="Vel. Média"
-            value="-- km/h"
-            variant="neon"
-          />
+          <StatCard label="Vel. Média" value="-- km/h" variant="neon" />
         </div>
       </Section>
 
@@ -78,9 +63,7 @@ export default function Home() {
             <span className="text-sm text-gray-400">
               Distância: {totalDistance.toFixed(1)} km / {weeklyGoal} km
             </span>
-            <span className="text-sm font-bold text-neon-400">
-              {progress.toFixed(0)}%
-            </span>
+            <span className="text-sm font-bold text-neon-400">{progress.toFixed(0)}%</span>
           </div>
           <div className="w-full h-2 bg-dark-800 rounded-full overflow-hidden">
             <div
@@ -98,19 +81,13 @@ export default function Home() {
               <span className="text-2xl text-neon-400">▶</span>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white mb-1">
-                Bora pedalar?
-              </h3>
+              <h3 className="text-lg font-bold text-white mb-1">Bora pedalar?</h3>
               <p className="text-sm text-gray-500 max-w-xs mx-auto">
-                Inicie uma nova sessão com GPS, HUD em tempo real e gravação
-                automática de rota. Funciona offline.
+                Inicie uma nova sessão com GPS, HUD em tempo real e gravação automática de rota.
+                Funciona offline.
               </p>
             </div>
-            <Button
-              size="lg"
-              onClick={() => navigate('/ride')}
-              className="min-w-[200px]"
-            >
+            <Button size="lg" onClick={() => navigate('/ride')} className="min-w-[200px]">
               Iniciar Pedal
             </Button>
           </div>

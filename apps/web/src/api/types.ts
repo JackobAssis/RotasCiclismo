@@ -1,6 +1,6 @@
 /**
  * API Response Types: Type-safe backend communication
- * 
+ *
  * All API responses are strongly typed here.
  * Ensures compile-time safety for all backend calls.
  */
@@ -196,7 +196,7 @@ export type SyncTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 export interface CreateSyncTaskDto {
   type: SyncTaskType;
   rideId: string;
-  payload: any;
+  payload: unknown;
   priority?: number;
 }
 
@@ -206,7 +206,7 @@ export interface SyncTaskDto {
   type: SyncTaskType;
   rideId: string;
   status: SyncTaskStatus;
-  payload?: any;
+  payload?: unknown;
   attempts: number;
   maxAttempts: number;
   error?: string;

@@ -6,7 +6,18 @@ import { JwtAuthGuard } from '../../common/auth.guard';
 
 describe('RoutePointsController', () => {
   let controller: RoutePointsController;
-  let mockPrisma: any;
+  let mockPrisma: {
+    ride: {
+      findUnique: jest.Mock;
+    };
+    routePoint: {
+      create: jest.Mock;
+      createMany: jest.Mock;
+      findMany: jest.Mock;
+      count: jest.Mock;
+      deleteMany: jest.Mock;
+    };
+  };
 
   const mockRide = {
     id: 'ride-1',
@@ -43,10 +54,7 @@ describe('RoutePointsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RoutePointsController],
-      providers: [
-        RoutePointsService,
-        { provide: PrismaClient, useValue: mockPrisma },
-      ],
+      providers: [RoutePointsService, { provide: PrismaClient, useValue: mockPrisma }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: jest.fn(() => true) })
@@ -117,9 +125,9 @@ describe('RoutePointsController', () => {
       const req = { user: { userId: 'user-1' } };
       const dto = { points: [] };
 
-      await expect(
-        controller.bulkCreateRoutePoints('ride-1', req, dto),
-      ).rejects.toThrow('Points array cannot be empty');
+      await expect(controller.bulkCreateRoutePoints('ride-1', req, dto)).rejects.toThrow(
+        'Points array cannot be empty',
+      );
     });
   });
 

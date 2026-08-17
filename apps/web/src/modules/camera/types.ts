@@ -8,7 +8,7 @@
 export enum CameraPermissionState {
   UNKNOWN = 'UNKNOWN',
   GRANTED = 'GRANTED',
-  DENIED = 'DENIED'
+  DENIED = 'DENIED',
 }
 
 export enum CameraStatus {
@@ -16,7 +16,7 @@ export enum CameraStatus {
   INITIALIZING = 'INITIALIZING',
   STREAMING = 'STREAMING',
   ERROR = 'ERROR',
-  STOPPED = 'STOPPED'
+  STOPPED = 'STOPPED',
 }
 
 export type CameraStreamState = {
@@ -34,7 +34,7 @@ export enum CameraEvent {
   STREAM_STARTED = 'STREAM_STARTED',
   STREAM_STOPPED = 'STREAM_STOPPED',
   PERMISSION_CHANGED = 'PERMISSION_CHANGED',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
 }
 
 // Export for public consumption

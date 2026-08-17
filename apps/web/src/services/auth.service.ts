@@ -1,18 +1,18 @@
 /**
  * Auth Service: Handles authentication flows
- * 
+ *
  * Operations:
  * - Signup
  * - Signin
  * - Logout
  * - Token refresh
  * - Session restoration
- * 
+ *
  * Coordinates between:
  * - apiService (API calls)
  * - authStore (state)
  * - tokenManager (token storage)
- * 
+ *
  * ISOLATION PRINCIPLE:
  * Auth service knows about auth only.
  * Doesn't directly affect runtime systems.
@@ -32,7 +32,7 @@ export class AuthError extends Error {
   constructor(
     message: string,
     public code: string = 'AUTH_ERROR',
-    public isRecoverable: boolean = false
+    public isRecoverable: boolean = false,
   ) {
     super(message);
     this.name = 'AuthError';
@@ -182,7 +182,7 @@ export class AuthService {
 
   /**
    * Refresh access token using refresh token
-   * 
+   *
    * Prevents concurrent refresh requests
    */
   async refreshAccessToken(): Promise<boolean> {
@@ -240,7 +240,7 @@ export class AuthService {
 
   /**
    * Restore session from storage
-   * 
+   *
    * Called on app startup to check if user is already logged in
    */
   async restoreSession(): Promise<boolean> {
@@ -362,7 +362,7 @@ export class AuthService {
 
   /**
    * Check if authentication is needed
-   * 
+   *
    * Returns true if user needs to log in
    */
   isAuthenticationNeeded(): boolean {

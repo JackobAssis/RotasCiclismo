@@ -4,5 +4,5 @@ export {
   DurationWidget,
   GPSStatusWidget,
   RecordingStatusWidget,
-  BatteryWidget
+  BatteryWidget,
 } from './widgets';

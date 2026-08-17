@@ -20,16 +20,7 @@ const paddingStyles = {
 };
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  (
-    {
-      variant = 'default',
-      padding = 'md',
-      children,
-      className = '',
-      ...props
-    },
-    ref
-  ) => {
+  ({ variant = 'default', padding = 'md', children, className = '', ...props }, ref) => {
     return (
       <div
         ref={ref}
@@ -39,7 +30,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         {children}
       </div>
     );
-  }
+  },
 );
 
 Card.displayName = 'Card';

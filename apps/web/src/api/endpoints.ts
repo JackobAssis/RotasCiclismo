@@ -1,6 +1,6 @@
 /**
  * API Endpoints: Centralized route definitions
- * 
+ *
  * All backend API endpoints defined here for:
  * - Type safety
  * - Easy refactoring

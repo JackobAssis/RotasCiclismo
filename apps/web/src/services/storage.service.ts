@@ -1,5 +1,11 @@
 import { eventBus } from '../lib/eventBus';
-import type { RoutePoint, RideSession, Snapshot, SyncTask } from '../../../../packages/types/src/index';
+import type { RideDto } from '../api/types';
+import type {
+  RoutePoint,
+  RideSession,
+  Snapshot,
+  SyncTask,
+} from '../../../../packages/types/src/index';
 
 const DB_NAME = 'cycling_system_v1';
 const DB_VERSION = 2;
@@ -12,7 +18,7 @@ const STORE_RIDES_CACHE = 'rides_cache';
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (ev) => {
+    req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_SESSIONS)) {
         db.createObjectStore(STORE_SESSIONS, { keyPath: 'id' });
@@ -76,7 +82,7 @@ function scheduleFlush(delay = 1000) {
   flushTimer = window.setTimeout(async () => {
     flushTimer = null;
     if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(async () => {
+      window.requestIdleCallback(async () => {
         await flushPointsBatch();
       });
     } else {
@@ -212,7 +218,7 @@ export const storageService = {
             duration: summary?.duration ?? 0,
             averageSpeed: summary?.averageSpeed ?? 0,
             maxSpeed: summary?.maxSpeed ?? 0,
-            elevation: summary?.elevation ?? 0,
+            elevationGain: summary?.elevation ?? 0,
             calories: summary?.calories ?? 0,
           },
           status: 'pending',
@@ -241,7 +247,7 @@ export const storageService = {
       const store = tx(db, [STORE_POINTS], 'readonly').objectStore(STORE_POINTS);
       const index = store.index('rideId_idx');
       const req = index.getAll(IDBKeyRange.only(rideId));
-      req.onsuccess = () => resolve((req.result || []).map((r: any) => r.point));
+      req.onsuccess = () => resolve((req.result || []).map((r: { point: RoutePoint }) => r.point));
       req.onerror = () => resolve([]);
     });
   },
@@ -251,8 +257,12 @@ export const storageService = {
     return new Promise((resolve, reject) => {
       try {
         const store = tx(db, [STORE_SYNC]).objectStore(STORE_SYNC);
-        const obj = { ...task, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-        const req = store.add(obj as any);
+        const obj = {
+          ...task,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const req = store.add(obj);
         req.onsuccess = () => {
           logQueue('task:persisted', { type: task.type, rideId: task.rideId });
           resolve();
@@ -264,23 +274,23 @@ export const storageService = {
     });
   },
 
-  async getPendingSyncTasks(limit = 50): Promise<any[]> {
+  async getPendingSyncTasks(limit = 50): Promise<SyncTask[]> {
     const db = await openDB();
     return new Promise((resolve) => {
       const store = tx(db, [STORE_SYNC], 'readonly').objectStore(STORE_SYNC);
       const req = store.getAll();
       req.onsuccess = () => {
         const all = req.result || [];
-        const pending = all.filter(
-          (t: any) => t.status === 'pending' || t.status === 'failed'
-        ).slice(0, limit);
+        const pending = all
+          .filter((t: SyncTask) => t.status === 'pending' || t.status === 'failed')
+          .slice(0, limit);
         resolve(pending);
       };
       req.onerror = () => resolve([]);
     });
   },
 
-  async getAllSyncTasks(): Promise<any[]> {
+  async getAllSyncTasks(): Promise<SyncTask[]> {
     const db = await openDB();
     return new Promise((resolve) => {
       const store = tx(db, [STORE_SYNC], 'readonly').objectStore(STORE_SYNC);
@@ -290,11 +300,11 @@ export const storageService = {
     });
   },
 
-  async updateSyncTask(taskId: any, updates: Partial<any>): Promise<void> {
+  async updateSyncTask(taskId: number | string, updates: Partial<SyncTask>): Promise<void> {
     const db = await openDB();
     return new Promise((resolve) => {
       const store = tx(db, [STORE_SYNC]).objectStore(STORE_SYNC);
-      const req = store.get(taskId as any);
+      const req = store.get(taskId);
       req.onsuccess = () => {
         const t = req.result;
         if (!t) return resolve();
@@ -306,11 +316,11 @@ export const storageService = {
     });
   },
 
-  async removeSyncTask(taskId: any): Promise<void> {
+  async removeSyncTask(taskId: number | string): Promise<void> {
     const db = await openDB();
     return new Promise((resolve) => {
       const store = tx(db, [STORE_SYNC]).objectStore(STORE_SYNC);
-      const req = store.delete(taskId as any);
+      const req = store.delete(taskId);
       req.onsuccess = () => resolve();
       req.onerror = () => resolve();
     });
@@ -323,7 +333,7 @@ export const storageService = {
       const req = store.getAll();
       req.onsuccess = () => {
         const all = req.result || [];
-        resolve(all.filter((s: any) => s.rideId === rideId));
+        resolve(all.filter((s: Snapshot) => s.rideId === rideId));
       };
       req.onerror = () => resolve([]);
     });
@@ -336,7 +346,7 @@ export const storageService = {
       const req = store.getAll();
       req.onsuccess = () => {
         const all = req.result || [];
-        const unfinished = all.filter((s: any) => !s.finishedAt);
+        const unfinished = all.filter((s: RideSession) => !s.finishedAt);
         resolve(unfinished);
       };
       req.onerror = () => resolve([]);
@@ -346,7 +356,7 @@ export const storageService = {
   async streamPointsForRide(
     rideId: string,
     onChunk: (points: RoutePoint[]) => Promise<void> | void,
-    chunkSize = 500
+    chunkSize = 500,
   ) {
     const db = await openDB();
     return new Promise<void>((resolve) => {
@@ -355,7 +365,7 @@ export const storageService = {
       const request = index.openCursor(IDBKeyRange.only(rideId));
       const buffer: RoutePoint[] = [];
       request.onsuccess = async (ev) => {
-        const cursor = (ev.target as any).result as IDBCursorWithValue | null;
+        const cursor = (ev.target as IDBRequest<IDBCursorWithValue | null>).result;
         if (cursor) {
           buffer.push(cursor.value.point);
           if (buffer.length >= chunkSize) {
@@ -376,14 +386,20 @@ export const storageService = {
 
   async clearAll() {
     const db = await openDB();
-    for (const name of [STORE_POINTS, STORE_SESSIONS, STORE_SNAPSHOTS, STORE_SYNC, STORE_RIDES_CACHE]) {
+    for (const name of [
+      STORE_POINTS,
+      STORE_SESSIONS,
+      STORE_SNAPSHOTS,
+      STORE_SYNC,
+      STORE_RIDES_CACHE,
+    ]) {
       const store = tx(db, [name]).objectStore(name);
       store.clear();
     }
     logQueue('service:cleared', {});
   },
 
-  async cacheRides(rides: any[]): Promise<void> {
+  async cacheRides(rides: RideDto[]): Promise<void> {
     const db = await openDB();
     return new Promise((resolve) => {
       const store = tx(db, [STORE_RIDES_CACHE]).objectStore(STORE_RIDES_CACHE);
@@ -398,7 +414,7 @@ export const storageService = {
     });
   },
 
-  async getCachedRides(): Promise<any[]> {
+  async getCachedRides(): Promise<RideDto[]> {
     const db = await openDB();
     return new Promise((resolve) => {
       const store = tx(db, [STORE_RIDES_CACHE], 'readonly').objectStore(STORE_RIDES_CACHE);

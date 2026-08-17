@@ -10,8 +10,7 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary:
-    'bg-neon-500 text-black hover:bg-neon-400 shadow-neon-sm hover:shadow-neon',
+  primary: 'bg-neon-500 text-black hover:bg-neon-400 shadow-neon-sm hover:shadow-neon',
   secondary:
     'bg-dark-800 text-neon-400 border border-neon-900/40 hover:bg-dark-850 hover:border-neon-700/50',
   ghost: 'text-gray-400 hover:text-neon-400 hover:bg-dark-800',
@@ -25,17 +24,7 @@ const sizeStyles: Record<Size, string> = {
 };
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  (
-    {
-      variant = 'secondary',
-      size = 'md',
-      label,
-      children,
-      className = '',
-      ...props
-    },
-    ref
-  ) => {
+  ({ variant = 'secondary', size = 'md', label, children, className = '', ...props }, ref) => {
     return (
       <button
         ref={ref}
@@ -47,7 +36,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {children}
       </button>
     );
-  }
+  },
 );
 
 IconButton.displayName = 'IconButton';

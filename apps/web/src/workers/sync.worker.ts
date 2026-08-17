@@ -1,4 +1,9 @@
-import type { SyncTask, SyncWorkerCommand, SyncWorkerResponse, SyncWorkerStatus } from '../../../../packages/types/src/index';
+import type {
+  SyncTask,
+  SyncWorkerCommand,
+  SyncWorkerResponse,
+  SyncWorkerStatus,
+} from '../../../../packages/types/src/index';
 
 const WORKER_LOG = '[SyncWorker]';
 
@@ -6,17 +11,25 @@ function getWorkerApiUrl(): string {
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  if (typeof self !== 'undefined' && self.location && self.location.hostname !== 'localhost' && self.location.hostname !== '127.0.0.1') {
+  if (
+    typeof self !== 'undefined' &&
+    self.location &&
+    self.location.hostname !== 'localhost' &&
+    self.location.hostname !== '127.0.0.1'
+  ) {
     return 'https://cycling-api-production.up.railway.app/api';
   }
   return 'http://localhost:3000/api';
 }
 
 const API_BASE_URL = getWorkerApiUrl();
-let cancelledTaskIds = new Set<number | string>();
+const cancelledTaskIds = new Set<number | string>();
 let activeStatus: SyncWorkerStatus = 'idle';
 let currentAccessToken: string | null = null;
-const workerGlobal = self as unknown as { postMessage: (message: any) => void; close: () => void };
+const workerGlobal = self as unknown as {
+  postMessage: (message: unknown) => void;
+  close: () => void;
+};
 
 function log(msg: string, data?: Record<string, unknown>) {
   console.log(`${WORKER_LOG} ${msg}`, data ?? '');
@@ -31,10 +44,10 @@ function postWorkerEvent(message: SyncWorkerResponse) {
   workerGlobal.postMessage(message);
 }
 
-async function fetchWithRetry<T = any>(
+async function fetchWithRetry<T = unknown>(
   endpoint: string,
   options: RequestInit,
-  maxRetries: number = 2
+  maxRetries: number = 2,
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -65,9 +78,7 @@ async function fetchWithRetry<T = any>(
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        throw new Error(
-          `HTTP ${response.status}: ${errorBody.message || response.statusText}`
-        );
+        throw new Error(`HTTP ${response.status}: ${errorBody.message || response.statusText}`);
       }
 
       const data: T = await response.json();
@@ -98,10 +109,14 @@ async function createRideTask(task: SyncTask) {
 
     postWorkerEvent({ type: 'progress', taskId, progress: 20, message: 'Criando pedalada...' });
 
-    const result = await fetchWithRetry('/rides', {
-      method: 'POST',
-      body: JSON.stringify(task.payload),
-    }, 2);
+    const result = await fetchWithRetry(
+      '/rides',
+      {
+        method: 'POST',
+        body: JSON.stringify(task.payload),
+      },
+      2,
+    );
 
     postWorkerEvent({ type: 'progress', taskId, progress: 100, message: 'Pedalada criada' });
     log('task:create_ride:success', { rideId: task.rideId });
@@ -125,28 +140,45 @@ async function uploadRoutePointsTask(task: SyncTask) {
     const points = task.payload.points;
     const rideId = task.rideId;
 
-    postWorkerEvent({ type: 'progress', taskId, progress: 20, message: `Enviando ${points.length} pontos...` });
+    postWorkerEvent({
+      type: 'progress',
+      taskId,
+      progress: 20,
+      message: `Enviando ${points.length} pontos...`,
+    });
     log('task:upload_points:progress', { rideId, count: points.length });
 
     const MAX_BATCH = 10000;
     if (points.length > MAX_BATCH) {
       log('task:upload_points:splitting', { total: points.length, max: MAX_BATCH });
-      const chunks: any[][] = [];
+      const chunks: unknown[][] = [];
       for (let i = 0; i < points.length; i += MAX_BATCH) {
         chunks.push(points.slice(i, i + MAX_BATCH));
       }
       for (let i = 0; i < chunks.length; i++) {
-        await fetchWithRetry(`/rides/${rideId}/points/bulk`, {
-          method: 'POST',
-          body: JSON.stringify({ points: chunks[i] }),
-        }, 2);
-        log('task:upload_points:chunk', { chunk: i + 1, total: chunks.length, count: chunks[i].length });
+        await fetchWithRetry(
+          `/rides/${rideId}/points/bulk`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ points: chunks[i] }),
+          },
+          2,
+        );
+        log('task:upload_points:chunk', {
+          chunk: i + 1,
+          total: chunks.length,
+          count: chunks[i].length,
+        });
       }
     } else {
-      await fetchWithRetry(`/rides/${rideId}/points/bulk`, {
-        method: 'POST',
-        body: JSON.stringify({ points }),
-      }, 2);
+      await fetchWithRetry(
+        `/rides/${rideId}/points/bulk`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ points }),
+        },
+        2,
+      );
     }
 
     postWorkerEvent({ type: 'progress', taskId, progress: 90, message: 'Pontos enviados' });
@@ -168,10 +200,14 @@ async function updateRideTask(task: SyncTask) {
 
     postWorkerEvent({ type: 'progress', taskId, progress: 20, message: 'Atualizando pedalada...' });
 
-    const result = await fetchWithRetry(`/rides/${task.rideId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(task.payload),
-    }, 2);
+    const result = await fetchWithRetry(
+      `/rides/${task.rideId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(task.payload),
+      },
+      2,
+    );
 
     postWorkerEvent({ type: 'progress', taskId, progress: 100, message: 'Pedalada atualizada' });
     log('task:update_ride:success', { rideId: task.rideId });
@@ -192,10 +228,14 @@ async function finishRideTask(task: SyncTask) {
 
     postWorkerEvent({ type: 'progress', taskId, progress: 20, message: 'Finalizando pedalada...' });
 
-    const result = await fetchWithRetry(`/rides/${task.rideId}/finish`, {
-      method: 'POST',
-      body: JSON.stringify(task.payload),
-    }, 2);
+    const result = await fetchWithRetry(
+      `/rides/${task.rideId}/finish`,
+      {
+        method: 'POST',
+        body: JSON.stringify(task.payload),
+      },
+      2,
+    );
 
     postWorkerEvent({ type: 'progress', taskId, progress: 100, message: 'Pedalada finalizada' });
     log('task:finish_ride:success', { rideId: task.rideId });
@@ -218,10 +258,14 @@ async function uploadSnapshotTask(task: SyncTask) {
 
     postWorkerEvent({ type: 'progress', taskId, progress: 20, message: 'Enviando snapshot...' });
 
-    const result = await fetchWithRetry(`/rides/${task.rideId}/snapshots`, {
-      method: 'POST',
-      body: JSON.stringify(snapshotData),
-    }, 2);
+    const result = await fetchWithRetry(
+      `/rides/${task.rideId}/snapshots`,
+      {
+        method: 'POST',
+        body: JSON.stringify(snapshotData),
+      },
+      2,
+    );
 
     postWorkerEvent({ type: 'progress', taskId, progress: 100, message: 'Snapshot enviado' });
     log('task:upload_snapshot:success', { rideId: task.rideId, snapshotId: id });
@@ -232,7 +276,7 @@ async function uploadSnapshotTask(task: SyncTask) {
   }
 }
 
-const TASK_DISPATCHER: Record<string, (task: SyncTask) => Promise<any>> = {
+const TASK_DISPATCHER: Record<string, (task: SyncTask) => Promise<unknown>> = {
   RIDE_CREATE: createRideTask,
   RIDE_UPDATE: updateRideTask,
   ROUTE_POINTS_UPLOAD: uploadRoutePointsTask,
@@ -240,7 +284,7 @@ const TASK_DISPATCHER: Record<string, (task: SyncTask) => Promise<any>> = {
   SNAPSHOT_UPLOAD: uploadSnapshotTask,
 };
 
-async function executeRealTaskUpload(task: SyncTask): Promise<any> {
+async function executeRealTaskUpload(task: SyncTask): Promise<unknown> {
   const handler = TASK_DISPATCHER[task.type];
   if (!handler) {
     throw new Error(`Unknown task type: ${task.type}`);
@@ -302,7 +346,12 @@ self.addEventListener('message', async (ev: MessageEvent<SyncWorkerCommand>) => 
             : error instanceof Error
               ? error.message
               : String(error);
-          log('processTasks:failure', { taskId, type: task.type, rideId: task.rideId, error: errMsg });
+          log('processTasks:failure', {
+            taskId,
+            type: task.type,
+            rideId: task.rideId,
+            error: errMsg,
+          });
           postWorkerEvent({
             type: 'failure',
             taskId,
