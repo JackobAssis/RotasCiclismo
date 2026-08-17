@@ -22,6 +22,15 @@ const safeAreaStyle: React.CSSProperties = {
   paddingRight: 'env(safe-area-inset-right, 0px)',
 };
 
+const HUD_LAYERS: WidgetLayer[] = ['base', 'interactive', 'overlay', 'modal'];
+const LAYER_Z: Record<WidgetLayer, string> = {
+  base: 'z-[100]',
+  interactive: 'z-[200]',
+  overlay: 'z-[300]',
+  modal: 'z-[400]',
+};
+
+// Non-docked (side/center) widgets keep absolute positioning
 function getPositionClasses(position: WidgetPosition): string {
   const positionMap: Record<WidgetPosition, string> = {
     'top-left': 'top-4 left-4',
@@ -42,13 +51,29 @@ function getLayerZIndex(layer: WidgetLayer): number {
   ];
 }
 
-const HUD_LAYERS: WidgetLayer[] = ['base', 'interactive', 'overlay', 'modal'];
-const LAYER_Z: Record<WidgetLayer, string> = {
-  base: 'z-[100]',
-  interactive: 'z-[200]',
-  overlay: 'z-[300]',
-  modal: 'z-[400]',
-};
+type DockedWidget = [string, HudWidgetConfig, HudWidget];
+
+function getTopSlot(position: WidgetPosition): number {
+  if (position === 'top-left') return 0;
+  if (position === 'top-right') return 2;
+  return 1;
+}
+
+function getBottomSlot(position: WidgetPosition): number {
+  if (position === 'bottom-left') return 0;
+  if (position === 'bottom-right') return 2;
+  return 1;
+}
+
+function renderSlot(slot: DockedWidget | null, justify: string, index: number) {
+  if (!slot) return <div key={`empty-${index}`} />;
+  const [key, config, Component] = slot;
+  return (
+    <div key={key} className={`flex ${justify}`}>
+      <Component label={config.label} />
+    </div>
+  );
+}
 
 export const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
   registry,
@@ -56,14 +81,8 @@ export const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
   positionOverrides,
   hudDensity,
 }) => {
-  const widgetsByLayer = useMemo(() => {
-    const grouped: Record<WidgetLayer, Array<[string, HudWidgetConfig, HudWidget]>> = {
-      base: [],
-      interactive: [],
-      overlay: [],
-      modal: [],
-    };
-
+  const baseWidgets = useMemo(() => {
+    const list: DockedWidget[] = [];
     Object.entries(registry).forEach(([key, entry]) => {
       if (visibility[key] === false) return;
 
@@ -71,21 +90,71 @@ export const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
       if (hudDensity === 'minimal') shouldInclude = (entry.config.priority ?? 0) >= 15;
       else if (hudDensity === 'normal') shouldInclude = (entry.config.priority ?? 0) >= 8;
 
-      if (shouldInclude) {
+      if (shouldInclude && entry.config.layer === 'base') {
         const position = positionOverrides[key] ?? entry.config.position;
-        grouped[entry.config.layer].push([key, { ...entry.config, position }, entry.component]);
+        list.push([key, { ...entry.config, position }, entry.component]);
       }
     });
-
-    return grouped;
+    return list;
   }, [registry, visibility, positionOverrides, hudDensity]);
+
+  const topSlots = useMemo<DockedWidget[]>(() => {
+    const slots: DockedWidget[] = [null, null, null] as unknown as DockedWidget[];
+    baseWidgets.forEach((w) => {
+      const slot = getTopSlot(w[1].position);
+      slots[slot] = w;
+    });
+    return slots;
+  }, [baseWidgets]);
+
+  const bottomSlots = useMemo<DockedWidget[]>(() => {
+    const slots: DockedWidget[] = [null, null, null] as unknown as DockedWidget[];
+    baseWidgets.forEach((w) => {
+      if (w[1].position.startsWith('top')) return;
+      const slot = getBottomSlot(w[1].position);
+      slots[slot] = w;
+    });
+    return slots;
+  }, [baseWidgets]);
 
   return (
     <>
-      {HUD_LAYERS.map((layer) => {
-        const widgets = widgetsByLayer[layer];
+      {/* Base HUD layer — mobile dock layout:
+          top status row (GPS | Recording | Battery) + bottom stats dock
+          raised above the action buttons */}
+      <div className="fixed inset-0 pointer-events-none z-[100]" style={safeAreaStyle}>
+        <div className="absolute top-0 inset-x-0 p-3 grid grid-cols-3 items-start gap-2">
+          {topSlots.map((slot, i) =>
+            renderSlot(
+              slot,
+              i === 0 ? 'justify-start' : i === 2 ? 'justify-end' : 'justify-center',
+              i,
+            ),
+          )}
+        </div>
+        <div className="absolute inset-x-3 bottom-28 grid grid-cols-3 items-end gap-2">
+          {bottomSlots.map((slot, i) =>
+            renderSlot(
+              slot,
+              i === 0 ? 'justify-start' : i === 2 ? 'justify-end' : 'justify-center',
+              i,
+            ),
+          )}
+        </div>
+      </div>
+
+      {/* Interactive / overlay / modal layers — absolutely positioned */}
+      {HUD_LAYERS.filter((layer) => layer !== 'base').map((layer) => {
+        const widgets = Object.entries(registry)
+          .filter(
+            ([key, entry]) =>
+              visibility[key] !== false &&
+              entry.config.layer === layer &&
+              (hudDensity !== 'minimal' || (entry.config.priority ?? 0) >= 15),
+          )
+          .map(([key, entry]) => [key, entry.config, entry.component] as DockedWidget);
+
         if (widgets.length === 0) return null;
-        const ptrClass = layer === 'base' ? 'pointer-events-none' : 'pointer-events-auto';
         return (
           <div
             key={layer}
@@ -95,7 +164,7 @@ export const HudOverlayLayer: React.FC<HudOverlayLayerProps> = ({
             {widgets.map(([key, config, Component]) => (
               <div
                 key={key}
-                className={`absolute ${getPositionClasses(config.position)} ${ptrClass}`}
+                className={`absolute ${getPositionClasses(config.position)} pointer-events-auto`}
                 style={{ zIndex: getLayerZIndex(config.layer) }}
                 data-widget-id={key}
                 data-widget-layer={layer}

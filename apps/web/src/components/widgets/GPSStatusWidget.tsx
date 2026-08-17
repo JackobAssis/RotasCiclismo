@@ -4,10 +4,10 @@ import { useOverlay } from '../OverlayManager';
 import type { HudWidget } from '../../modules/hud/types';
 
 function deriveGPSStatus(accuracy: number | null): string {
-  if (accuracy === null) return 'Searching';
-  if (accuracy > 50) return 'Fair';
-  if (accuracy > 20) return 'Good';
-  return 'Excellent';
+  if (accuracy === null) return 'Buscando';
+  if (accuracy > 50) return 'Regular';
+  if (accuracy > 20) return 'Bom';
+  return 'Excelente';
 }
 
 const GPSStatusWidgetComponent: HudWidget = memo(({ label = 'GPS' }) => {
@@ -20,20 +20,28 @@ const GPSStatusWidgetComponent: HudWidget = memo(({ label = 'GPS' }) => {
   const status = deriveGPSStatus(accuracy);
 
   const statusColors: Record<string, string> = {
-    Searching: 'text-yellow-400 bg-yellow-500/10',
-    Fair: 'text-orange-400 bg-orange-500/10',
-    Good: 'text-blue-400 bg-blue-500/10',
-    Excellent: 'text-green-400 bg-green-500/10',
-    Connected: 'text-blue-400 bg-blue-500/10',
+    Buscando: 'bg-yellow-400',
+    Regular: 'bg-orange-400',
+    Bom: 'bg-blue-400',
+    Excelente: 'bg-green-400',
   };
 
-  const colorClass = statusColors[status] || 'text-gray-400 bg-gray-500/10';
+  const dotColor = statusColors[status] || 'bg-gray-400';
 
   return (
-    <div className={`rounded-xl px-4 py-3 shadow-2xl border border-dark-700/50 ${colorClass}`}>
-      <div className="text-xs font-semibold uppercase tracking-wider">{label}</div>
-      <div className="text-sm font-bold mt-1">{status}</div>
-      {accuracy !== null && <div className="text-xs opacity-75">±{accuracy.toFixed(0)}m</div>}
+    <div className="glass-strong rounded-xl px-3 py-2 shadow-lg">
+      <div className="flex items-center gap-1.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+          {label}
+        </span>
+      </div>
+      <div className="text-xs font-bold text-white mt-0.5">
+        {status}
+        {accuracy !== null && (
+          <span className="text-gray-500 font-medium"> ±{accuracy.toFixed(0)}m</span>
+        )}
+      </div>
     </div>
   );
 });
@@ -59,7 +67,7 @@ export const GPSStatusWidget = memo(() => {
     return () => overlay.unregisterWidget('gps-status');
   }, [overlay]);
 
-  return <GPSStatusWidgetComponent label="GPS" />;
+  return null;
 });
 
 GPSStatusWidget.displayName = 'GPSStatusWidget';

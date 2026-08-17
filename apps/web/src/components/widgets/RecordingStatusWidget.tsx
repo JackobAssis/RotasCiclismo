@@ -3,28 +3,32 @@ import { useRideStore } from '../../stores/ride.store';
 import { useOverlay } from '../OverlayManager';
 import type { HudWidget } from '../../modules/hud/types';
 
-const RecordingStatusWidgetComponent: HudWidget = memo(({ label = 'Recording' }) => {
+const RecordingStatusWidgetComponent: HudWidget = memo(({ label = 'REC' }) => {
   const status = useRideStore((state) => state.status);
   const mode = useRideStore((state) => state.active?.mode ?? 'GPS_ONLY');
 
-  const statusConfig = {
-    idle: { color: 'bg-gray-500/10 text-gray-400', icon: '⊘', label: 'Ready' },
-    active: { color: 'bg-red-500/10 text-red-400', icon: '●', label: 'Recording' },
-    paused: { color: 'bg-yellow-500/10 text-yellow-400', icon: '⏸', label: 'Paused' },
-    finished: { color: 'bg-green-500/10 text-green-400', icon: '✓', label: 'Finished' },
+  const statusConfig: Record<string, { dot: string; text: string; pulse: boolean }> = {
+    idle: { dot: 'bg-gray-400', text: 'Pronto', pulse: false },
+    active: { dot: 'bg-red-500', text: 'Gravando', pulse: true },
+    paused: { dot: 'bg-yellow-400', text: 'Pausado', pulse: false },
+    finished: { dot: 'bg-green-500', text: 'Concluída', pulse: false },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || statusConfig.idle;
 
   return (
-    <div className={`rounded-xl px-4 py-3 shadow-2xl border border-dark-700/50 ${config.color}`}>
-      <div className="text-xs font-semibold uppercase tracking-wider">{label}</div>
-      <div className="flex items-center gap-2 mt-1">
-        <span className="text-lg font-bold">{config.icon}</span>
-        <div className="text-sm font-bold">{config.label}</div>
+    <div className="glass-strong rounded-xl px-3 py-2 shadow-lg">
+      <div className="flex items-center gap-1.5">
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${config.dot} ${config.pulse ? 'animate-pulse' : ''}`}
+        />
+        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+          {label}
+        </span>
       </div>
-      <div className="text-xs opacity-75 mt-1">
-        {mode === 'GPS_CAMERA' ? 'GPS + Camera' : 'GPS Only'}
+      <div className="text-xs font-bold text-white mt-0.5">{config.text}</div>
+      <div className="text-[9px] text-gray-500">
+        {mode === 'GPS_CAMERA' ? 'GPS + Câmera' : 'GPS Only'}
       </div>
     </div>
   );
@@ -40,8 +44,8 @@ export const RecordingStatusWidget = memo(() => {
       'recording-status',
       {
         id: 'recording-status',
-        label: 'Recording',
-        position: 'top-right',
+        label: 'REC',
+        position: 'top-center',
         layer: 'base',
         visible: true,
         priority: 15,
@@ -51,7 +55,7 @@ export const RecordingStatusWidget = memo(() => {
     return () => overlay.unregisterWidget('recording-status');
   }, [overlay]);
 
-  return <RecordingStatusWidgetComponent label="Recording" />;
+  return null;
 });
 
 RecordingStatusWidget.displayName = 'RecordingStatusWidget';

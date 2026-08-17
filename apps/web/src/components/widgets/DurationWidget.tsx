@@ -3,7 +3,7 @@ import { useRideStore } from '../../stores/ride.store';
 import { useOverlay } from '../OverlayManager';
 import type { HudWidget } from '../../modules/hud/types';
 
-const DurationWidgetComponent: HudWidget = memo(({ label = 'Duration' }) => {
+const DurationWidgetComponent: HudWidget = memo(({ label = 'Tempo' }) => {
   const startedAt = useRideStore((state) => state.active?.startedAt);
   const [displayDuration, setDisplayDuration] = React.useState('00:00:00');
 
@@ -29,10 +29,14 @@ const DurationWidgetComponent: HudWidget = memo(({ label = 'Duration' }) => {
   }, [startedAt]);
 
   return (
-    <div className="bg-dark-900/95 backdrop-blur-md rounded-xl px-5 py-4 shadow-2xl border border-dark-700/50">
-      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</div>
-      <div className="text-base font-bold text-white mt-1 font-mono">{displayDuration}</div>
-      <div className="text-xs text-gray-500">hh:mm:ss</div>
+    <div className="glass-strong rounded-2xl px-4 py-3 text-right shadow-lg">
+      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        {label}
+      </div>
+      <div className="text-lg font-bold text-white mt-0.5 leading-none font-mono">
+        {displayDuration}
+      </div>
+      <div className="text-[10px] text-gray-500">hh:mm:ss</div>
     </div>
   );
 });
@@ -47,7 +51,7 @@ export const DurationWidget = memo(() => {
       'duration',
       {
         id: 'duration',
-        label: 'Duration',
+        label: 'Tempo',
         position: 'bottom-right',
         layer: 'base',
         visible: true,
@@ -58,7 +62,7 @@ export const DurationWidget = memo(() => {
     return () => overlay.unregisterWidget('duration');
   }, [overlay]);
 
-  return <DurationWidgetComponent label="Duration" />;
+  return null;
 });
 
 DurationWidget.displayName = 'DurationWidget';

@@ -315,21 +315,9 @@ export const RidePage: React.FC<RidePageProps> = ({
   const routeLength = useRideStore((s) => s.active?.route?.length ?? 0);
   const rideDistance = useRideStore((s) => s.active?.distance ?? 0);
 
-  // Simple booleans — no useMemo needed (primitives, cheap)
-  const shouldRenderGPSWidget = hudDensity !== 'minimal';
-  const shouldRenderDurationWidget = hudDensity !== 'minimal';
-  const shouldRenderBatteryWidget = hudDensity !== 'minimal';
-
   const mapContainerClasses = useMemo(
     () => (shouldShowMap ? 'flex-1 relative overflow-hidden' : 'w-0 h-0 overflow-hidden absolute'),
     [shouldShowMap],
-  );
-
-  const hudOpacityStyle = useMemo(() => ({ opacity: profile.hud.opacity }), [profile.hud.opacity]);
-
-  const hudScaleStyle = useMemo(
-    () => ({ transform: `scale(${profile.hud.scale})` }),
-    [profile.hud.scale],
   );
 
   const runtimeCompositionInfo = useMemo(
@@ -459,49 +447,40 @@ export const RidePage: React.FC<RidePageProps> = ({
         )}
 
         <OverlayManager>
-          <div className="absolute inset-0 pointer-events-none" style={hudOpacityStyle}>
-            <div style={hudScaleStyle}>
-              {shouldRenderGPSWidget && <GPSStatusWidget />}
-              <RecordingStatusWidget />
-              {shouldRenderBatteryWidget && <BatteryWidget />}
-              <SpeedWidget />
-              <DistanceWidget />
-              {shouldRenderDurationWidget && <DurationWidget />}
-            </div>
-          </div>
+          {/* Widgets self-register with OverlayManager; rendering is done by HudOverlayLayer */}
+          <GPSStatusWidget />
+          <RecordingStatusWidget />
+          <BatteryWidget />
+          <SpeedWidget />
+          <DistanceWidget />
+          <DurationWidget />
 
           <div
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto z-[500]"
+            className="absolute bottom-6 inset-x-4 flex items-center gap-3 pointer-events-auto z-[500]"
             style={{ touchAction: 'manipulation' }}
           >
             <button
               onClick={handlePauseResume}
-              className={`px-8 py-4 rounded-xl font-bold text-lg transition-all min-h-[52px] ${
+              className={`flex-1 px-6 py-4 rounded-2xl font-bold text-lg transition-all min-h-[56px] ${
                 status === 'active'
-                  ? 'bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg'
+                  ? 'bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg shadow-yellow-900/30'
                   : status === 'paused'
-                    ? 'bg-neon-600 hover:bg-neon-500 text-black shadow-lg'
+                    ? 'bg-neon-500 hover:bg-neon-400 text-black shadow-lg shadow-neon-900/30'
                     : 'bg-dark-700 text-gray-500'
               }`}
               disabled={status === 'idle' || status === 'finished'}
               style={{ touchAction: 'manipulation', userSelect: 'none' }}
             >
-              {status === 'active' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Pausar'}
+              {status === 'active' ? '⏸ Pausar' : status === 'paused' ? '▶ Retomar' : 'Pausar'}
             </button>
-          </div>
-
-          <div
-            className="absolute bottom-8 right-6 pointer-events-auto z-[500]"
-            style={{ touchAction: 'manipulation' }}
-          >
             <button
               onClick={handleFinish}
-              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all min-h-[48px] min-w-[48px] ${
+              className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all min-h-[56px] ${
                 status === 'finished'
-                  ? 'bg-neon-600/20 text-neon-400 border border-neon-500/30'
+                  ? 'bg-neon-500/20 text-neon-400 border border-neon-500/30'
                   : status === 'idle'
                     ? 'bg-dark-800 text-gray-600 border border-dark-700'
-                    : 'bg-dark-800 text-gray-400 border border-dark-700 hover:border-red-800 hover:text-red-400'
+                    : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/30'
               }`}
               disabled={status === 'idle'}
               style={{ touchAction: 'manipulation', userSelect: 'none' }}

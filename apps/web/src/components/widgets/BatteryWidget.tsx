@@ -3,20 +3,22 @@ import { useRuntimeStore } from '../../stores/runtime.store';
 import { useOverlay } from '../OverlayManager';
 import type { HudWidget } from '../../modules/hud/types';
 
-const BatteryWidgetComponent: HudWidget = memo(({ label = 'Battery' }) => {
+const BatteryWidgetComponent: HudWidget = memo(({ label = 'Bateria' }) => {
   const batteryPercent = useRuntimeStore((s) => s.runtimeState.batteryPercent);
 
   const levelColor =
     batteryPercent > 30
-      ? 'text-green-400 bg-green-500/10'
+      ? 'text-green-400'
       : batteryPercent > 15
-        ? 'text-yellow-400 bg-yellow-500/10'
-        : 'text-red-400 bg-red-500/10';
+        ? 'text-yellow-400'
+        : 'text-red-400';
 
   return (
-    <div className={`rounded-xl px-4 py-3 shadow-2xl border border-dark-700/50 ${levelColor}`}>
-      <div className="text-xs font-semibold uppercase tracking-wider">{label}</div>
-      <div className="text-sm font-bold mt-1">{batteryPercent.toFixed(0)}%</div>
+    <div className="glass-strong rounded-xl px-3 py-2 text-right shadow-lg">
+      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        {label}
+      </div>
+      <div className={`text-sm font-bold mt-0.5 ${levelColor}`}>{batteryPercent.toFixed(0)}%</div>
     </div>
   );
 });
@@ -31,8 +33,8 @@ export const BatteryWidget = memo(() => {
       'battery',
       {
         id: 'battery',
-        label: 'Battery',
-        position: 'top-center',
+        label: 'Bateria',
+        position: 'top-right',
         layer: 'base',
         visible: true,
         priority: 13,
@@ -42,7 +44,7 @@ export const BatteryWidget = memo(() => {
     return () => overlay.unregisterWidget('battery');
   }, [overlay]);
 
-  return <BatteryWidgetComponent label="Battery" />;
+  return null;
 });
 
 BatteryWidget.displayName = 'BatteryWidget';
